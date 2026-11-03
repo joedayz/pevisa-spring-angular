@@ -1,0 +1,126 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  color: #1b242c;
+}
+
+.wrap {
+  width: min(1080px, calc(100% - 2rem));
+  margin: 0 auto;
+}
+
+.top {
+  background: #16342c;
+  color: #f7f4ee;
+  padding: 2.75rem 0 2.25rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.4rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  color: #b7d7cc;
+}
+
+h1 {
+  margin: 0;
+  font-size: 2.25rem;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+}
+
+.lead {
+  margin: 0.6rem 0 0;
+  max-width: 38rem;
+  color: #d7e4de;
+}
+
+main {
+  padding: 1.5rem 0 3rem;
+}
+
+.resumen,
+.fuente,
+.estado {
+  color: #526068;
+}
+
+.estado {
+  background: #fff;
+  border: 1px solid #e2ddd2;
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+}
+
+.estado.error {
+  color: #8a341f;
+  background: #fff6f2;
+  border-color: #f0d2c8;
+}
+
+.tabla {
+  background: #fff;
+  border: 1px solid #e2ddd2;
+  border-radius: 14px;
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 0.85rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #eee8dc;
+  white-space: nowrap;
+}
+
+th {
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #66737a;
+  background: #fbfaf6;
+}
+
+tr:last-child td {
+  border-bottom: 0;
+}
+
+tbody tr:hover td {
+  background: #f7faf8;
+}
+
+.num {
+  text-align: right;
+}
+
+.codigo {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 0.92rem;
+}
+
+.precio {
+  font-variant-numeric: tabular-nums;
+}
+
+.bajo {
+  display: inline-block;
+  margin-left: 0.45rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: #f8e6d8;
+  color: #8a341f;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.fuente {
+  font-size: 0.85rem;
+}

@@ -1,12 +1,23 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, inject, signal } from '@angular/core';
+import { Repuesto } from './repuesto';
+import { RepuestoService } from './repuesto.service';
+import { NgForOf } from '@angular/common';
+
 
 @Component({
-  imports: [RouterOutlet],
   selector: 'app-root',
   styleUrl: './app.css',
   templateUrl: './app.html',
 })
 export class App {
-  protected readonly title = signal('frontend');
+  private readonly repuestoService = inject(RepuestoService);
+
+  protected readonly repuestos = signal<Repuesto[]>([]);
+
+  constructor() {
+    this.repuestoService.listar().subscribe({
+      next: (repuestos) => this.repuestos.set(repuestos),
+      error: (err) => console.error(err),
+    });
+  }
 }
