@@ -11,7 +11,7 @@
   @if (cargando()){
     <p class="estado">Cargando catálogo...</p>
   } @else if (error()){
-    <p class="estado error">{{ error }}</p>
+    <p class="estado error">{{ error() }}</p>
   } @else{
     <p class="resumen">{{ repuestos().length }} repuestos en catálogo</p>
     <div class="tabla">
