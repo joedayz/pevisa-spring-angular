@@ -7,8 +7,42 @@
 </header>
 
 <main class="wrap">
-  <section class="repuestos">
-    <p class="resumen">{{ repuestos().length }} repuestos en catálogo</p>
 
-  </section>
+  @if (cargando()){
+    <p class="estado">Cargando catálogo...</p>
+  } @else if (error()){
+    <p class="estado error">{{ error }}</p>
+  } @else{
+    <p class="resumen">{{ repuestos().length }} repuestos en catálogo</p>
+    <div class="tabla">
+      <table>
+        <thead>
+        <th>Código</th>
+        <th>Repuesto</th>
+        <th>Marca</th>
+        <th>Categoría</th>
+        <th class="num">Stock</th>
+        <th class="num">Precio</th>
+        </thead>
+        <tbody>
+          @for (repuesto of repuestos(); track repuesto.id){
+            <tr>
+              <td class="codigo">{{ repuesto.codigo }}</td>
+              <td>{{ repuesto.nombre }}</td>
+              <td>{{ repuesto.marca }}</td>
+              <td>{{ repuesto.categoria }}</td>
+              <td class="num">{{ repuesto.stock }}
+                @if (repuesto.stock<20){
+                  <span class="bajo">Bajo</span>
+                }
+              </td>
+              <td class="num precio">{{ repuesto.precio | currency:'USD':'symbol-narrow':'1.2-2' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+
 </main>
