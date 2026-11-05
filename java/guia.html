@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Java en 10 horas</title>
+  <style>
+    :root { --green:#16342c; --paper:#f6f3ec; --line:#ddd4c4; --mint:#e7f3ee; }
+    * { box-sizing:border-box; }
+    body { margin:0; font:17px/1.45 "Segoe UI", system-ui, sans-serif; background:var(--paper); color:#14211c; }
+    header { background:var(--green); color:#f7f4ee; padding:1.6rem 7vw; }
+    h1 { margin:0; font-size:2rem; }
+    main { padding:1rem 7vw 3rem; }
+    h2 { margin-top:1.8rem; }
+    .mapa { width:100%; border-collapse:collapse; background:#fff; }
+    .mapa th, .mapa td { border-bottom:1px solid var(--line); text-align:left; padding:0.55rem 0.7rem; vertical-align:top; }
+    .mapa th { background:#16342c; color:white; }
+    pre { background:#14211c; color:#f4f1ea; padding:0.9rem 1rem; border-radius:12px; overflow:auto; }
+    code, pre { font-family:ui-monospace, Menlo, Consolas, monospace; }
+    .fila { display:grid; grid-template-columns:1fr 1fr; gap:0.8rem; }
+    @media (max-width:800px) { .fila { grid-template-columns:1fr; } }
+    .extra { background:var(--mint); border-radius:12px; padding:0.7rem 1rem; }
+    a { color:#0f6e56; }
+  </style>
+</head>
+<body>
+  <header>
+    <p style="margin:0;color:#d5e6de">Resumen del curso Java 25 Developer · 10 horas · el ejemplo es PEVISA</p>
+    <h1>Java, antes de Spring</h1>
+  </header>
+  <main>
+    <p>Cada idea aparece una vez, con un ejemplo de divisiones o de stock. El instructor la escribe, el grupo la repite en <code>start</code> con otro dato, y <code>solution</code> queda al lado. Los archivos sueltos se corren con <code>java Archivo.java</code>. Si la noche termina antes, el recuadro verde tiene lo siguiente.</p>
+    <table class="mapa">
+      <tr><th>Curso Java 25</th><th>Estas 10 h</th><th>Ejercicio</th></tr>
+      <tr><td>Tipos, operadores, casting, String, if / else if, switch, for, while, break</td><td>Noche 1 · 4 nov</td><td><a href="noche01-control/start/Control.java">start</a> · <a href="noche01-control/solution/Control.java">solution</a></td></tr>
+      <tr><td>Clases, encapsulación, constructor, static, enum con campos, record, herencia, @Override, interface, polimorfismo</td><td>Noche 2 · 6 nov</td><td><a href="noche02-clases/start/Clases.java">start</a> · <a href="noche02-clases/solution/Clases.java">solution</a></td></tr>
+      <tr><td>Arrays, List, Set, Map, genéricos, lambdas, Predicate, Comparator, streams, groupingBy, Optional</td><td>Noche 3 · 9 nov</td><td><a href="noche03-colecciones/start/Colecciones.java">start</a> · <a href="noche03-colecciones/solution/Colecciones.java">solution</a></td></tr>
+      <tr><td>BigDecimal, LocalDate, LocalDateTime, excepción propia, try / catch / finally, try-with-resources, leer un CSV, java.io</td><td>Noche 4 · 11 nov</td><td><a href="noche04-archivos/start/Archivos.java">start</a> · <a href="noche04-archivos/solution/Archivos.java">solution</a></td></tr>
+      <tr><td>Maven, paquetes, JUnit, Git, módulos, hilo virtual</td><td>Noche 5 · 13 nov</td><td><a href="noche05-maven/start/pom.xml">maven start</a> · <a href="noche05-maven/solution/pom.xml">solution</a> · <a href="noche05-modulos/LEEME.txt">módulos</a> · <a href="noche05-hilos/start/Hilos.java">hilos</a></td></tr>
+    </table>
+
+    <h2>Noche 1 · operadores, String, if, switch y bucles</h2>
+    <div class="fila">
+      <pre>int bujias = 45;
+int porCaja = 12;
+int cajas = bujias / porCaja;   // 3
+int sueltas = bujias % porCaja; // 9
+
+String codigo = "  ele-017 ".trim().toUpperCase();
+codigo.startsWith("ELE");  // true
+codigo.equals("ELE-017");  // true, nunca ==</pre>
+      <pre>static String estado(int cantidad, int minimo) {
+    if (cantidad == 0) {
+        return "AGOTADO";
+    } else if (cantidad &lt; minimo) {
+        return "BAJO";
+    } else {
+        return "OK";
+    }
+}</pre>
+    </div>
+    <div class="fila">
+      <pre>String nombre = switch (division) {
+    case "BOSCH" -> "Bosch";
+    case "DENSO" -> "Denso";
+    default -> "División desconocida";
+};</pre>
+      <pre>for (int i = 0; i &lt; stock.length; i++) {
+    System.out.println(i + ": " + stock[i]);
+}
+for (int unidades : stock) {
+    if (unidades &lt; 20) bajos++;
+}</pre>
+    </div>
+    <p class="extra">Si sobra tiempo: <code>Scanner</code> para pedir un código por teclado, <code>do / while</code> para repetir hasta que escriban <code>FIN</code>, y <code>Sesion02</code> del curso largo (casting de <code>long</code> a <code>int</code>, errores comunes).</p>
+
+    <h2>Noche 2 · la clase del negocio</h2>
+    <div class="fila">
+      <pre>enum Division {
+    BOSCH("Bosch"), BATERIAS("Baterías");
+
+    private final String nombre;
+    Division(String nombre) { this.nombre = nombre; }
+    String nombre() { return nombre; }
+}</pre>
+      <pre>class Pieza implements ConStock {
+    private static int creadas = 0;
+    private int stock;
+
+    Pieza(String codigo, Division division, int stock, int minimo) {
+        if (stock &lt; 0) {
+            throw new IllegalArgumentException("El stock no puede ser negativo");
+        }
+        ...
+        creadas++;
+    }
+}</pre>
+    </div>
+    <pre>class Bateria extends Pieza {
+    @Override
+    String detalle() { return super.detalle() + " · " + volts + "V"; }
+}
+
+List&lt;Pieza&gt; piezas = List.of(bateria, pastillas);
+for (Pieza pieza : piezas) {
+    System.out.println(pieza.detalle()); // cada una usa su propio detalle()
+}
+
+record Almacen(String codigo, String direccion) {}  // equals, toString y getters gratis</pre>
+    <p><code>private</code> protege el stock: solo cambia con <code>ingresar</code>. <code>static</code> es de la clase, no de cada pieza. El record es la forma corta de una clase de datos; Spring lo convierte a JSON tal cual.</p>
+    <h3>Depurar en IntelliJ · 15 minutos</h3>
+    <div class="fila">
+      <pre>1. Clic en el margen de la línea de ingresar(...)   → punto rojo
+2. Clic derecho en main → Debug 'Clases'
+3. F8  pasa a la línea siguiente
+   F7  entra al método
+   F9  sigue hasta el próximo punto rojo
+4. Panel Variables: stock, creadas, this</pre>
+      <pre>Exception in thread "main" java.lang.IllegalArgumentException:
+    El stock no puede ser negativo
+	at Pieza.&lt;init&gt;(Clases.java:46)      ← la línea que lanzó
+	at Clases.main(Clases.java:124)     ← quién la llamó</pre>
+    </div>
+    <p>El stack trace se lee de arriba abajo: el mensaje, luego la línea donde nació el error, luego quién la llamó. En la solución, la pieza <code>DEN-220</code> con stock <code>-1</code> está dentro de un <code>try</code>; al comentar el <code>try / catch</code> sale esa traza. El grupo pone un punto rojo en la línea 46 y mira <code>stock</code> antes de que se lance la excepción. Es la misma herramienta que usarán en Spring.</p>
+    <p class="extra">Si sobra tiempo: <code>sealed interface Movimiento permits Ingreso, Salida</code> y un <code>switch</code> con patrones (<code>case Ingreso i -&gt; ...</code>). Es Java 21+, y está en <code>Session04</code> y <code>Session05</code>.</p>
+
+    <h2>Noche 3 · colecciones, lambdas y streams</h2>
+    <pre>Predicate&lt;Sku&gt; enCallao = sku -> sku.almacen().equals("CALLAO");
+
+List&lt;String&gt; bajos = catalogo.stream()
+        .filter(Sku::bajo)
+        .map(Sku::codigo)
+        .toList();                                     // [ELE-017, DEN-220, SUS-102]
+
+catalogo.sort(Comparator.comparingInt(Sku::stock));
+
+Map&lt;String, Integer&gt; porAlmacen = catalogo.stream()
+        .collect(Collectors.groupingBy(Sku::almacen, Collectors.summingInt(Sku::stock)));
+
+Optional&lt;Sku&gt; buscado = catalogo.stream().filter(s -> s.codigo().equals("NEU-190")).findFirst();
+buscado.map(Sku::codigo).orElse("no está");</pre>
+    <p><code>List&lt;Sku&gt;</code> es un genérico: la lista solo acepta <code>Sku</code>. Una lambda es un método sin nombre. <code>Optional</code> es la caja que puede venir vacía; Spring Data la devuelve en <code>findById</code>. <code>groupingBy</code> es el dashboard del final del curso.</p>
+    <p class="extra">Si sobra tiempo: <code>Function</code>, <code>Supplier</code> y <code>Consumer</code> de <code>Session06</code>; <code>partitioningBy</code> y <code>reduce</code> de <code>Session08</code>.</p>
+
+    <h2>Noche 4 · dinero, fechas, errores y archivos</h2>
+    <div class="fila">
+      <pre>class StockInsuficienteException extends RuntimeException {
+    StockInsuficienteException(String codigo, int pedido, int hay) {
+        super("Stock insuficiente de " + codigo
+              + ": pide " + pedido + ", hay " + hay);
+    }
+}</pre>
+      <pre>try {
+    bateria.salida(20);
+} catch (StockInsuficienteException ex) {
+    System.out.println(ex.getMessage());
+} finally {
+    System.out.println("Fin de la salida");
+}</pre>
+    </div>
+    <pre>for (String linea : Files.readAllLines(Path.of("productos.csv"))) {
+    String[] partes = linea.split(";");
+    productos.add(new Producto(partes[0], partes[1],
+            new BigDecimal(partes[2]), Integer.parseInt(partes[3])));
+}
+
+try (FileWriter kardex = new FileWriter("kardex.txt")) {   // java.io, se cierra solo
+    kardex.write(ahora.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")) + " salida ELE-017\n");
+}</pre>
+    <p>El precio va en <code>BigDecimal</code> porque <code>double</code> redondea mal el dinero. <code>IOException</code> es checked: el compilador obliga a atraparla. <code>RuntimeException</code> es unchecked: la regla de negocio la lanza y Spring la convertirá en un 409.</p>
+    <p class="extra">Si sobra tiempo: <code>Session03</code> con <code>Duration</code>, <code>Period</code> y <code>ZonedDateTime</code>; <code>Session10</code> con <code>BufferedReader</code> y consola.</p>
+
+    <h2>Noche 5 · Maven, JUnit, módulos y un hilo</h2>
+    <div class="fila">
+      <pre>inventario/
+├─ pom.xml
+├─ src/main/java/pe/pevisa/inventario/
+│   ├─ Inventario.java
+│   └─ StockInsuficienteException.java
+└─ src/test/java/pe/pevisa/inventario/
+    └─ InventarioTest.java</pre>
+      <pre>@Test
+void salidaMayorAlStockFalla() {
+    assertThrows(StockInsuficienteException.class,
+            () -> callao.salida("ELE-017", 20));
+}</pre>
+    </div>
+    <p>Un proyecto Spring Boot es un proyecto Maven: la misma carpeta <code>src/main/java</code>, el mismo <code>pom.xml</code> con dependencias. <code>mvn test</code> en <code>start</code> sale en rojo con dos fallas; el ejercicio es dejarlo en verde. <code>@Test</code> y <code>@BeforeEach</code> son anotaciones, la primera que ven antes de <code>@RestController</code>.</p>
+    <h3>Git · 20 minutos, sobre el proyecto inventario</h3>
+    <div class="fila">
+      <pre>git config --global user.name "Ana Pérez"
+git config --global user.email "ana@pevisa.pe"
+
+cd inventario
+git init
+git status                 # qué cambió
+git add .
+git commit -m "Inventario con 5 tests"
+git log --oneline</pre>
+      <pre># .gitignore
+target/
+.idea/
+*.iml
+
+git switch -c salida-parcial      # rama nueva
+# ...cambio en Inventario.java...
+git diff
+git commit -am "Salida parcial"
+git switch main
+git merge salida-parcial</pre>
+    </div>
+    <p>Un commit es una foto del proyecto con un mensaje. <code>target/</code> va al <code>.gitignore</code> porque Maven lo vuelve a generar. Desde esta noche, cada clase termina con un commit: si algo se rompe, <code>git diff</code> muestra qué cambió y <code>git restore Archivo.java</code> lo devuelve a la última foto. En el trabajo, el mismo repositorio vive en GitHub o GitLab: <code>git clone</code>, <code>git pull</code>, <code>git push</code> y un pull request para que otro revise.</p>
+
+    <pre>module pevisa.stock {
+    exports pe.pevisa.stock;
+}
+
+var stock = new AtomicInteger(8);
+Thread hilo = Thread.ofVirtual().start(() -> stock.addAndGet(-2));
+hilo.join();   // 6</pre>
+    <p>La segunda hora: un módulo que exporta <code>Almacen</code> y un hilo virtual que descuenta stock. Spring Boot usa hilos virtuales con <code>spring.threads.virtual.enabled=true</code>.</p>
+    <p class="extra">Si sobra tiempo: <code>ejemplos-concurrencia</code> con <code>ExecutorService</code>, <code>synchronized</code> y una carrera de dos salidas sobre el mismo stock.</p>
+  </main>
+</body>
+</html>
