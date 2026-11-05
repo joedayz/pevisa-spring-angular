@@ -43,7 +43,7 @@ enum Division{
 
 
 //Clase Padre
-class Pieza implements ConStock, Otro{
+class Pieza extends Object implements ConStock, Otro{
     private String codigo;
     private Division division;
     private int minimo;
@@ -94,6 +94,11 @@ class Bateria extends Pieza{
 
 record Almacen (String codigo, String direccion){
 
+    // codigo() y direccion() son metodos que ya vienen por defecto en un record
+    // toString() tambien viene por defecto en un record
+    // hashCode() y equals() tambien vienen por defecto en un record
+    // constructor tambien viene por defecto en un record
+    // Lombok ---> despues de java 17
 }
 
 
