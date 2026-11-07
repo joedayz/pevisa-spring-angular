@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Colecciones en Java 25</title>
+  <style>
+    :root { --green:#16342c; --paper:#f6f3ec; --line:#ddd4c4; --mint:#e7f3ee; --seq:#cfe8dc; --ink:#14211c; }
+    * { box-sizing:border-box; }
+    html, body { margin:0; background:var(--paper); color:var(--ink); }
+    body { font:17px/1.4 "Segoe UI", system-ui, sans-serif; }
+    header { background:var(--green); color:#f7f4ee; padding:1.1rem 4vw 1.2rem; }
+    header p { margin:0; color:#d5e6de; }
+    h1 { margin:0.15rem 0 0; font-size:1.85rem; font-weight:600; }
+    main { padding:1rem 3vw 2rem; min-width:0; }
+    figure { margin:0; background:#fff; border:1px solid var(--line); border-radius:12px; padding:0.7rem 0.5rem 0.4rem; min-width:0; overflow:auto; }
+    figcaption { display:flex; justify-content:space-between; gap:1rem; font-size:0.95rem; font-weight:600; color:var(--green); padding:0 0.7rem 0.4rem; }
+    figcaption span { font-weight:400; color:#4d5f58; }
+    svg { display:block; width:100%; height:auto; aspect-ratio:1400 / 470; }
+    .leyenda { display:flex; flex-wrap:wrap; gap:0.7rem 1.2rem; margin:0.85rem 0 1rem; font-size:0.95rem; }
+    .leyenda i { display:inline-block; width:1.15rem; height:0.85rem; border:1.5px solid var(--green); border-radius:4px; vertical-align:middle; margin-right:0.35rem; }
+    .leyenda .iface { background:var(--mint); }
+    .leyenda .seq { background:var(--seq); }
+    .leyenda .klass { background:#fff; }
+    .leyenda .noche { background:#fff; box-shadow:inset 0 0 0 2px #b7791f; }
+    .leyenda .dash { width:1.4rem; height:0; border:0; border-top:2px dashed var(--green); border-radius:0; }
+    .uso { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:0.7rem; }
+    .uso article { background:#fff; border:1px solid var(--line); border-radius:12px; padding:0.7rem 0.85rem; }
+    .uso h2 { margin:0 0 0.25rem; font-size:1.05rem; color:var(--green); }
+    .uso p { margin:0; font-size:0.95rem; }
+    code { font-family:ui-monospace, Menlo, Consolas, monospace; font-size:0.88em; }
+    .api { margin-top:0.9rem; background:var(--mint); border-radius:12px; padding:0.75rem 1rem; }
+    .api p { margin:0; }
+    @media (max-width:900px) {
+      .uso { grid-template-columns:1fr 1fr; }
+      figcaption { flex-direction:column; gap:0.15rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <p>Java 25 Developer · Noche 3 · PEVISA</p>
+    <h1>Colecciones en Java 25</h1>
+  </header>
+  <main>
+    <figure>
+      <figcaption>
+        <span><strong>Collection</strong> · elementos sueltos</span>
+        <span><strong>Map</strong> · no es Collection</span>
+      </figcaption>
+      <svg viewBox="0 0 1400 470" width="1400" height="470" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="diagTitle diagDesc">
+        <title id="diagTitle">Jerarquía de colecciones en Java 25</title>
+        <desc id="diagDesc">Collection con SequencedCollection, List, Set, Queue y Deque. Map aparte, con SequencedMap. Las clases de esta noche son ArrayList, HashSet, HashMap y TreeMap.</desc>
+        <defs>
+          <style>
+            .box { stroke:#16342c; stroke-width:1.6; }
+            .iface { fill:#e7f3ee; rx:9; }
+            .seq { fill:#cfe8dc; rx:9; stroke-width:2.1; }
+            .klass { fill:#fff; rx:5; }
+            .noche { stroke:#b7791f; stroke-width:2.4; }
+            .lbl { font:600 15px "Segoe UI", system-ui, sans-serif; fill:#14211c; text-anchor:middle; }
+            .sub { font:400 11px "Segoe UI", system-ui, sans-serif; fill:#4d5f58; text-anchor:middle; }
+            .wire { fill:none; stroke:#16342c; stroke-width:1.7; }
+            .also { stroke-dasharray:6 4; }
+          </style>
+        </defs>
+
+        <path class="wire" d="M510 38 V58" />
+        <path class="wire" d="M510 94 V109 H155 V124" />
+        <path class="wire" d="M510 109 H470 V124" />
+        <path class="wire" d="M510 109 H810 V124" />
+        <path class="wire" d="M155 162 V181 H75 V200" />
+        <path class="wire" d="M155 181 H227 V200" />
+        <path class="wire" d="M155 181 H390 V200" />
+        <path class="wire" d="M540 143 H555" />
+        <path class="wire" d="M810 162 V202" />
+        <path class="wire also" d="M400 143 H310 V217" />
+        <path class="wire also" d="M740 143 V190 H450 V217" />
+        <path class="wire" d="M75 234 V248 H80 V274" />
+        <path class="wire" d="M75 248 H220 V274" />
+        <path class="wire" d="M227 234 V258 H375 V274" />
+        <path class="wire" d="M227 258 H535 V272" />
+        <path class="wire" d="M390 234 V244 H722 V274" />
+        <path class="wire" d="M535 306 V344" />
+        <path class="wire" d="M535 378 V416" />
+
+        <rect class="box iface" x="435" y="6" width="150" height="32" />
+        <text class="lbl" x="510" y="27">Iterable</text>
+
+        <rect class="box iface" x="420" y="58" width="180" height="36" />
+        <text class="lbl" x="510" y="81">Collection</text>
+
+        <rect class="box seq" x="40" y="124" width="230" height="38" />
+        <text class="lbl" x="155" y="143">SequencedCollection</text>
+        <text class="sub" x="155" y="156">desde 21</text>
+
+        <rect class="box iface" x="400" y="124" width="140" height="38" />
+        <text class="lbl" x="470" y="148">Set</text>
+
+        <rect class="box klass noche" x="555" y="128" width="125" height="30" />
+        <text class="lbl" x="617" y="148">HashSet</text>
+
+        <rect class="box iface" x="740" y="124" width="140" height="38" />
+        <text class="lbl" x="810" y="148">Queue</text>
+
+        <rect class="box iface" x="20" y="200" width="110" height="34" />
+        <text class="lbl" x="75" y="222">List</text>
+
+        <rect class="box seq" x="145" y="200" width="165" height="34" />
+        <text class="lbl" x="227" y="222">SequencedSet</text>
+
+        <rect class="box iface" x="330" y="200" width="120" height="34" />
+        <text class="lbl" x="390" y="222">Deque</text>
+
+        <rect class="box klass" x="740" y="202" width="155" height="30" />
+        <text class="lbl" x="817" y="222">PriorityQueue</text>
+
+        <rect class="box klass noche" x="15" y="274" width="130" height="30" />
+        <text class="lbl" x="80" y="294">ArrayList</text>
+
+        <rect class="box klass" x="155" y="274" width="130" height="30" />
+        <text class="lbl" x="220" y="294">LinkedList</text>
+
+        <rect class="box klass" x="300" y="274" width="150" height="30" />
+        <text class="lbl" x="375" y="294">LinkedHashSet</text>
+
+        <rect class="box iface" x="470" y="272" width="130" height="34" />
+        <text class="lbl" x="535" y="294">SortedSet</text>
+
+        <rect class="box klass" x="650" y="274" width="145" height="30" />
+        <text class="lbl" x="722" y="294">ArrayDeque</text>
+
+        <text class="sub" x="220" y="318">List y Deque</text>
+
+        <rect class="box iface" x="465" y="344" width="140" height="34" />
+        <text class="lbl" x="535" y="366">NavigableSet</text>
+
+        <rect class="box klass" x="478" y="416" width="114" height="30" />
+        <text class="lbl" x="535" y="436">TreeSet</text>
+
+        <line x1="1008" y1="12" x2="1008" y2="452" stroke="#ddd4c4" stroke-width="1.5" />
+
+        <path class="wire" d="M1210 94 V109 H1137 V124" />
+        <path class="wire" d="M1210 109 H1308 V128" />
+        <path class="wire" d="M1137 162 V181 H1117 V202" />
+        <path class="wire" d="M1137 181 H1290 V200" />
+        <path class="wire" d="M1290 234 V272" />
+        <path class="wire" d="M1290 306 V344" />
+
+        <rect class="box iface" x="1140" y="58" width="140" height="36" />
+        <text class="lbl" x="1210" y="81">Map</text>
+
+        <rect class="box seq" x="1045" y="124" width="185" height="38" />
+        <text class="lbl" x="1137" y="143">SequencedMap</text>
+        <text class="sub" x="1137" y="156">desde 21</text>
+
+        <rect class="box klass noche" x="1245" y="128" width="126" height="30" />
+        <text class="lbl" x="1308" y="148">HashMap</text>
+
+        <rect class="box klass" x="1040" y="202" width="155" height="30" />
+        <text class="lbl" x="1117" y="222">LinkedHashMap</text>
+
+        <rect class="box iface" x="1220" y="200" width="140" height="34" />
+        <text class="lbl" x="1290" y="222">SortedMap</text>
+
+        <rect class="box iface" x="1215" y="272" width="150" height="34" />
+        <text class="lbl" x="1290" y="294">NavigableMap</text>
+
+        <rect class="box klass noche" x="1230" y="344" width="120" height="30" />
+        <text class="lbl" x="1290" y="364">TreeMap</text>
+      </svg>
+    </figure>
+
+    <p class="leyenda">
+      <span><i class="iface"></i>interfaz</span>
+      <span><i class="seq"></i>orden de encuentro · Java 21, vigente en 25</span>
+      <span><i class="klass"></i>clase</span>
+      <span><i class="noche"></i>esta noche</span>
+      <span><i class="dash"></i>también extiende</span>
+    </p>
+
+    <div class="uso">
+      <article>
+        <h2>List</h2>
+        <p>Orden y duplicados. El catálogo de SKU: <code>ArrayList</code>.</p>
+      </article>
+      <article>
+        <h2>Set</h2>
+        <p>Únicos, sin índice. Divisiones distintas: <code>HashSet</code>.</p>
+      </article>
+      <article>
+        <h2>Map</h2>
+        <p>Clave → valor. Código → mínimo: <code>HashMap</code>. Claves ordenadas: <code>TreeMap</code>.</p>
+      </article>
+      <article>
+        <h2>Deque</h2>
+        <p>Extremos. Cola de picking: <code>ArrayDeque</code>. <code>LinkedList</code> es List y Deque.</p>
+      </article>
+    </div>
+
+    <div class="api">
+      <p><strong>SequencedCollection</strong> unifica los extremos: <code>getFirst()</code> <code>getLast()</code> <code>addFirst()</code> <code>addLast()</code> <code>reversed()</code>. En el ejercicio: <code>catalogo.getFirst()</code>, ya no <code>get(0)</code>.</p>
+      <p style="margin-top:0.45rem">Fábricas: <code>List.of</code> <code>Set.of</code> <code>Map.of</code> · <code>copyOf</code> · <code>stream().toList()</code>. Un <code>String[]</code> no es Collection.</p>
+    </div>
+  </main>
+</body>
+</html>
