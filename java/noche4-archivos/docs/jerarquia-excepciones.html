@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Jerarquía de excepciones en Java</title>
+  <style>
+    :root { --ink:#14211c; --green:#16342c; --mint:#e7f3ee; --paper:#f6f3ec; --line:#ddd4c4; --rust:#8a341f; }
+    * { box-sizing: border-box; }
+    body { margin:0; font:17px/1.45 "Segoe UI", system-ui, sans-serif; color:var(--ink); background:var(--paper); }
+    header { background:var(--green); color:#f7f4ee; padding:1.6rem 7vw; }
+    header p { margin:0.3rem 0 0; color:#d5e6de; }
+    h1 { margin:0; font-size:2rem; }
+    main { padding:1.5rem 7vw 3rem; }
+    h2 { margin-top:1.8rem; }
+    a { color:#0f6e56; }
+    code, pre { font-family:ui-monospace, Menlo, Consolas, monospace; }
+    pre { background:#14211c; color:#f4f1ea; padding:0.9rem 1rem; border-radius:12px; overflow:auto; }
+    table { width:100%; border-collapse:collapse; background:#fff; }
+    th, td { border-bottom:1px solid var(--line); text-align:left; padding:0.55rem 0.7rem; vertical-align:top; }
+    th { background:var(--green); color:white; }
+    .extra { background:var(--mint); border-radius:12px; padding:0.7rem 1rem; }
+
+    /* Diagrama en árbol, solo CSS */
+    .tree { overflow-x:auto; padding:1.5rem 0 1rem; background:#fff; border:1px solid var(--line); border-radius:14px; }
+    .tree ul { display:table; margin:0 auto; padding-top:24px; position:relative; }
+    .tree li { display:table-cell; list-style-type:none; position:relative; padding:24px 8px 0 8px; vertical-align:top; text-align:center; }
+    .tree li::before, .tree li::after {
+      content:''; position:absolute; top:0; right:50%;
+      border-top:2px solid var(--line); width:50%; height:24px;
+    }
+    .tree li::after { right:auto; left:50%; border-left:2px solid var(--line); }
+    .tree li:only-child::after, .tree li:only-child::before { display:none; }
+    .tree li:only-child { padding-top:0; }
+    .tree li:first-child::before, .tree li:last-child::after { border:0 none; }
+    .tree li:last-child::before { border-right:2px solid var(--line); border-radius:0 8px 0 0; }
+    .tree li:first-child::after { border-radius:8px 0 0 0; }
+    .tree ul ul::before {
+      content:''; position:absolute; top:0; left:50%;
+      border-left:2px solid var(--line); width:0; height:24px;
+    }
+    .nodo {
+      border:1px solid var(--line); border-radius:10px; padding:0.5rem 0.8rem;
+      display:inline-block; background:#fff; font-size:0.86rem; line-height:1.3;
+    }
+    .nodo small { display:block; color:#5c6b73; font-size:0.74rem; margin-top:0.15rem; }
+    .nodo.raiz { background:var(--green); color:#fff; border-color:var(--green); font-weight:bold; }
+    .nodo.error { background:#f6e4df; border-color:var(--rust); color:var(--rust); }
+    .nodo.checked { background:var(--mint); border-color:#0f6e56; }
+    .nodo.unchecked { background:#fff2d9; border-color:#8a6d1f; }
+    .nodo.curso { border-width:2px; border-color:var(--green); font-weight:bold; }
+  </style>
+</head>
+<body>
+  <header>
+    <p>Resumen del curso Java 25 Developer · noche 4 · el ejemplo es PEVISA</p>
+    <h1>Jerarquía de excepciones en Java</h1>
+  </header>
+  <main>
+    <p>Todas las excepciones cuelgan de <code>Throwable</code>. De ahí se dividen en dos ramas: <code>Error</code> (fallos graves de la JVM, que no se capturan) y <code>Exception</code> (los problemas que sí maneja nuestro código).</p>
+
+    <div class="tree">
+      <ul>
+        <li>
+          <div class="nodo raiz">Throwable</div>
+          <ul>
+            <li>
+              <div class="nodo error">Error<small>no se captura</small></div>
+              <ul>
+                <li><div class="nodo">OutOfMemoryError</div></li>
+                <li><div class="nodo">StackOverflowError</div></li>
+              </ul>
+            </li>
+            <li>
+              <div class="nodo">Exception</div>
+              <ul>
+                <li><div class="nodo checked">IOException<small>checked</small></div></li>
+                <li><div class="nodo checked">SQLException<small>checked</small></div></li>
+                <li>
+                  <div class="nodo unchecked">RuntimeException<small>unchecked</small></div>
+                  <ul>
+                    <li><div class="nodo">NullPointerException</div></li>
+                    <li><div class="nodo">IndexOutOfBoundsException</div></li>
+                    <li><div class="nodo">IllegalArgumentException</div></li>
+                    <li><div class="nodo">ArithmeticException</div></li>
+                    <li><div class="nodo curso">StockInsuficienteException<small>ejemplo del curso</small></div></li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+
+    <h2>Las dos familias que importan al programar</h2>
+    <table>
+      <tr><th>Familia</th><th>¿Obliga <code>try/catch</code> o <code>throws</code>?</th><th>Dónde aparece en el curso</th></tr>
+      <tr>
+        <td><strong>Checked</strong> (<code>Exception</code> menos <code>RuntimeException</code>)</td>
+        <td>Sí, el compilador la exige</td>
+        <td><code>IOException</code> al leer/escribir archivos en <a href="../aula/java/noche04-archivos/solution/Archivos.java">noche04-archivos/solution/Archivos.java</a></td>
+      </tr>
+      <tr>
+        <td><strong>Unchecked</strong> (<code>RuntimeException</code> y sus hijas)</td>
+        <td>No, es decisión del programador</td>
+        <td><code>StockInsuficienteException</code> en <a href="../aula/java/noche05-maven/solution/src/main/java/pe/pevisa/inventario/StockInsuficienteException.java">noche05-maven/solution/.../StockInsuficienteException.java</a></td>
+      </tr>
+    </table>
+    <p><code>Error</code> no entra en ninguna de las dos reglas anteriores: no se declara con <code>throws</code> ni se captura, porque representa algo que la aplicación no puede resolver (memoria agotada, pila desbordada, etc.).</p>
+
+    <h2>Ejemplo checked: <code>IOException</code></h2>
+    <p>En <code>Archivos.java</code> leer y escribir el CSV puede fallar por disco o permisos, así que el compilador exige capturar <code>IOException</code> (o declarar <code>throws</code>):</p>
+    <pre>try {
+    Files.writeString(csv, contenido);
+    for (String linea : Files.readAllLines(csv)) {
+        // ...
+    }
+} catch (IOException ex) {
+    System.out.println("No se pudo leer el CSV: " + ex.getMessage());
+}</pre>
+
+    <h2>Ejemplo unchecked: excepción propia de negocio</h2>
+    <p><code>StockInsuficienteException</code> extiende <code>RuntimeException</code> porque es una regla de negocio (no hay suficiente stock), no un error externo como el disco o la red. Por eso el compilador no obliga a capturarla, aunque igual se puede manejar:</p>
+    <pre>try {
+    bateria.salida(20);
+} catch (StockInsuficienteException ex) {
+    System.out.println(ex.getMessage());
+} finally {
+    System.out.println("Fin de la salida");
+}</pre>
+
+    <h2>Regla práctica para crear una excepción nueva</h2>
+    <p class="extra">¿El problema viene de algo externo (archivo, red, base de datos) y quien llame al método <strong>debe</strong> enterarse en tiempo de compilación? → extiende <code>Exception</code> (checked).<br>
+    ¿El problema es una regla de negocio o un error de programación que normalmente no se recupera? → extiende <code>RuntimeException</code> (unchecked), como hace el curso con <code>StockInsuficienteException</code>.</p>
+  </main>
+</body>
+</html>
