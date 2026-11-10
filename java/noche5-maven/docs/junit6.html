@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JUnit 6 — teoría, Maven y buenas prácticas</title>
+  <style>
+    :root { --ink:#14211c; --green:#16342c; --mint:#e7f3ee; --paper:#f6f3ec; --line:#ddd4c4; --rust:#8a341f; }
+    * { box-sizing: border-box; }
+    body { margin:0; font:17px/1.45 "Segoe UI", system-ui, sans-serif; color:var(--ink); background:var(--paper); }
+    header { background:var(--green); color:#f7f4ee; padding:1.6rem 7vw; }
+    header p { margin:0.3rem 0 0; color:#d5e6de; }
+    h1 { margin:0; font-size:2rem; }
+    main { padding:1.5rem 7vw 3rem; }
+    h2 { margin-top:2rem; }
+    h3 { margin-top:1.2rem; color:var(--green); }
+    a { color:#0f6e56; }
+    code, pre { font-family:ui-monospace, Menlo, Consolas, monospace; }
+    pre { background:#14211c; color:#f4f1ea; padding:0.9rem 1rem; border-radius:12px; overflow:auto; }
+    table { width:100%; border-collapse:collapse; background:#fff; margin-top:0.6rem; }
+    th, td { border-bottom:1px solid var(--line); text-align:left; padding:0.5rem 0.7rem; vertical-align:top; }
+    th { background:var(--green); color:white; }
+    .extra { background:var(--mint); border-radius:12px; padding:0.7rem 1rem; }
+    .ok { border-left:4px solid #0f6e56; }
+    .no { border-left:4px solid var(--rust); }
+
+    .mapa3 { display:grid; grid-template-columns:repeat(3,1fr); gap:0.8rem; margin-top:1rem; }
+    @media (max-width:800px) { .mapa3 { grid-template-columns:1fr; } }
+    .paq { border:1px solid var(--line); border-radius:14px; padding:0.9rem 1rem; background:#fff; text-align:center; }
+    .paq strong { display:block; color:var(--green); font-size:1.05rem; }
+    .paq span { color:#5c6b73; font-size:0.9rem; }
+
+    .fila { display:grid; grid-template-columns:1fr 1fr; gap:0.8rem; }
+    @media (max-width:800px) { .fila { grid-template-columns:1fr; } }
+
+    .buenas { display:grid; grid-template-columns:1fr 1fr; gap:0.8rem; margin-top:0.6rem; }
+    @media (max-width:800px) { .buenas { grid-template-columns:1fr; } }
+    .buenas pre { margin:0.4rem 0 0; font-size:0.86rem; }
+    .buenas div { background:#fff; border:1px solid var(--line); border-radius:12px; padding:0.8rem 1rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <p>Resumen del curso Java 25 Developer · noche 5 · el ejemplo es PEVISA</p>
+    <h1>JUnit 6: teoría, Maven y buenas prácticas</h1>
+  </header>
+  <main>
+    <p>JUnit 6 (liberado el 30 de septiembre de 2025) es la versión que acompaña a Java 25: unifica el número de versión de <strong>Platform</strong>, <strong>Jupiter</strong> y <strong>Vintage</strong>, y exige <strong>Java 17</strong> como mínimo. El curso usa <code>junit-jupiter</code> 6.1.3, igual que <a href="../aula/java/noche05-maven/solution/pom.xml">noche05-maven/solution/pom.xml</a> y el backend de <a href="../backend/pom.xml">Spring Boot</a>.</p>
+
+    <h2>Teoría: las tres piezas de JUnit</h2>
+    <div class="mapa3">
+      <div class="paq"><strong>JUnit Platform</strong><span>El motor que descubre y ejecuta pruebas. Maven/IntelliJ hablan con él, no directamente con Jupiter.</span></div>
+      <div class="paq"><strong>JUnit Jupiter</strong><span>La API que se usa a diario: <code>@Test</code>, <code>@BeforeEach</code>, <code>Assertions</code>. Es la única pieza que se declara en el <code>pom.xml</code> del curso.</span></div>
+      <div class="paq"><strong>JUnit Vintage</strong><span>Un motor aparte para correr pruebas viejas escritas en JUnit 3/4 sobre la misma Platform.</span></div>
+    </div>
+
+    <h3>Anotaciones principales de Jupiter</h3>
+    <table>
+      <tr><th>Anotación</th><th>Qué hace</th><th>Ejemplo del curso</th></tr>
+      <tr><td><code>@Test</code></td><td>Marca un método como un caso de prueba</td><td><code>void ingresoSumaAlStock()</code> en <a href="../aula/java/noche05-maven/solution/src/test/java/pe/pevisa/inventario/InventarioTest.java">InventarioTest.java</a></td></tr>
+      <tr><td><code>@BeforeEach</code> / <code>@AfterEach</code></td><td>Corre antes/después de <strong>cada</strong> <code>@Test</code>; sirve para dejar un estado fresco</td><td><code>preparar()</code> crea un <code>Inventario</code> nuevo con 8 unidades de <code>ELE-017</code></td></tr>
+      <tr><td><code>@BeforeAll</code> / <code>@AfterAll</code></td><td>Corre una sola vez por clase (el método debe ser <code>static</code>, salvo con <code>@TestInstance(PER_CLASS)</code>)</td><td>Útil para recursos caros de levantar, como una conexión compartida</td></tr>
+      <tr><td><code>@DisplayName("texto")</code></td><td>Cambia el nombre que se ve en el reporte, en vez del nombre del método</td><td><code>@DisplayName("La salida mayor al stock lanza excepción")</code></td></tr>
+      <tr><td><code>@Nested</code></td><td>Agrupa pruebas relacionadas en una clase interna; desde JUnit 6 el orden es determinista</td><td>Agrupar <code>IngresoTest</code> y <code>SalidaTest</code> dentro de <code>InventarioTest</code></td></tr>
+      <tr><td><code>@Disabled("motivo")</code></td><td>Salta la prueba sin borrarla, dejando constancia del motivo</td><td><code>@Disabled("pendiente: regla de lote mínimo")</code></td></tr>
+      <tr><td><code>@ParameterizedTest</code> + <code>@ValueSource</code>/<code>@CsvSource</code></td><td>Corre el mismo método con varios juegos de datos</td><td>Probar <code>ingresar</code> con cantidades <code>-1, 0</code> y confirmar que ambas fallan</td></tr>
+    </table>
+
+    <h2>Declaración en <code>pom.xml</code></h2>
+    <p>El curso declara JUnit en dos pasos: primero importa el <strong>BOM</strong> (Bill of Materials) para fijar una sola versión para toda la familia JUnit, y luego agrega <code>junit-jupiter</code> sin indicar versión explícita (la toma del BOM).</p>
+    <pre>&lt;dependencyManagement&gt;
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.junit&lt;/groupId&gt;
+            &lt;artifactId&gt;junit-bom&lt;/artifactId&gt;
+            &lt;version&gt;6.1.3&lt;/version&gt;
+            &lt;type&gt;pom&lt;/type&gt;
+            &lt;scope&gt;import&lt;/scope&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+&lt;/dependencyManagement&gt;
+
+&lt;dependencies&gt;
+    &lt;dependency&gt;
+        &lt;groupId&gt;org.junit.jupiter&lt;/groupId&gt;
+        &lt;artifactId&gt;junit-jupiter&lt;/artifactId&gt;
+        &lt;scope&gt;test&lt;/scope&gt;
+    &lt;/dependency&gt;
+&lt;/dependencies&gt;</pre>
+    <table>
+      <tr><th>Elemento</th><th>Para qué sirve</th></tr>
+      <tr><td><code>junit-bom</code> en <code>dependencyManagement</code> con <code>scope=import</code></td><td>Fija una sola versión (6.1.3) para <code>junit-jupiter</code>, <code>junit-platform-*</code> y <code>junit-vintage-*</code>, aunque solo se declare una de ellas</td></tr>
+      <tr><td><code>junit-jupiter</code></td><td>Trae de un solo golpe <code>junit-jupiter-api</code> (anotaciones, <code>Assertions</code>), <code>junit-jupiter-engine</code> (ejecuta las pruebas) y <code>junit-jupiter-params</code> (pruebas parametrizadas)</td></tr>
+      <tr><td><code>scope&gt;test&lt;/scope</code></td><td>JUnit solo se empaqueta para compilar y correr pruebas; no viaja dentro del <code>.jar</code> final</td></tr>
+      <tr><td><code>maven.compiler.release</code> ≥ 17</td><td>JUnit 6 exige Java 17 como mínimo; el curso usa 25</td></tr>
+    </table>
+    <p class="extra">Un proyecto Spring Boot como <a href="../backend/pom.xml">backend/pom.xml</a> no necesita declarar nada de esto a mano: <code>spring-boot-starter-webmvc-test</code> ya trae <code>junit-jupiter</code> transitivamente, con la versión que fija <code>spring-boot-starter-parent</code>.</p>
+
+    <h2>Plugins de Maven para correr las pruebas</h2>
+    <table>
+      <tr><th>Plugin</th><th>Para qué sirve</th><th>Declaración en el curso</th></tr>
+      <tr><td><code>maven-surefire-plugin</code></td><td>Corre las pruebas unitarias (<code>*Test.java</code>) durante <code>mvn test</code>; necesita 3.x para hablar con JUnit Platform/Jupiter 6</td><td><a href="../aula/java/noche05-maven/solution/pom.xml">noche05-maven/solution/pom.xml</a>, versión 3.6.1</td></tr>
+      <tr><td><code>maven-failsafe-plugin</code></td><td>Hermano de Surefire para pruebas de integración (<code>*IT.java</code>), en las fases <code>verify</code>/<code>integration-test</code></td><td>No está en el curso; se agrega si se separan pruebas de integración</td></tr>
+      <tr><td><code>spring-boot-maven-plugin</code></td><td>Empaqueta y corre la app Spring Boot; no corre pruebas, pero <code>mvn verify</code> las ejecuta antes de empaquetar</td><td><a href="../backend/pom.xml">backend/pom.xml</a></td></tr>
+    </table>
+    <pre>&lt;build&gt;
+    &lt;plugins&gt;
+        &lt;plugin&gt;
+            &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+            &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+            &lt;version&gt;3.6.1&lt;/version&gt;
+        &lt;/plugin&gt;
+    &lt;/plugins&gt;
+&lt;/build&gt;</pre>
+    <pre>cd aula/java/noche05-maven/solution
+./mvnw test                     # solo corre las pruebas
+./mvnw test -Dtest=InventarioTest   # una sola clase
+./mvnw verify                   # test + empaquetado</pre>
+
+    <h2>Asserts de <code>org.junit.jupiter.api.Assertions</code></h2>
+    <table>
+      <tr><th>Método</th><th>Qué comprueba</th><th>Ejemplo real</th></tr>
+      <tr><td><code>assertEquals(esperado, real)</code></td><td>Que dos valores sean iguales</td><td><code>assertEquals(12, callao.stockDe("ELE-017"))</code></td></tr>
+      <tr><td><code>assertTrue(cond)</code> / <code>assertFalse(cond)</code></td><td>Que una condición booleana se cumpla (o no)</td><td><code>assertTrue(callao.stockDe("ELE-017") &gt; 0)</code></td></tr>
+      <tr><td><code>assertNull(valor)</code> / <code>assertNotNull(valor)</code></td><td>Que algo sea (o no sea) <code>null</code></td><td><code>assertNotNull(callao)</code></td></tr>
+      <tr><td><code>assertThrows(Clase.class, ejecutable)</code></td><td>Que el código lance una excepción concreta, y la devuelve para seguir revisándola</td><td><code>assertThrows(StockInsuficienteException.class, () -&gt; callao.salida("ELE-017", 20))</code></td></tr>
+      <tr><td><code>assertDoesNotThrow(ejecutable)</code></td><td>Que el código <strong>no</strong> lance ninguna excepción</td><td><code>assertDoesNotThrow(() -&gt; callao.ingresar("ELE-017", 4))</code></td></tr>
+      <tr><td><code>assertAll(nombre, ejecutables…)</code></td><td>Agrupa varias comprobaciones: si una falla, las demás igual se evalúan y se reportan juntas</td><td><code>assertAll("stock", () -&gt; assertEquals(6, stock), () -&gt; assertTrue(stock &gt;= 0))</code></td></tr>
+      <tr><td><code>assertIterableEquals(esperada, real)</code></td><td>Que dos colecciones tengan los mismos elementos en el mismo orden</td><td>Comparar la lista de productos leída del CSV</td></tr>
+      <tr><td><code>assertTimeout(duracion, ejecutable)</code></td><td>Que el código termine dentro de un tiempo límite</td><td><code>assertTimeout(Duration.ofMillis(100), () -&gt; callao.salida(...))</code></td></tr>
+    </table>
+
+    <p>El caso real del curso: <code>assertThrows</code> devuelve la excepción capturada para seguir comprobando su mensaje, igual que se haría con un <code>catch</code> manual.</p>
+    <pre>@Test
+void salidaMayorAlStockFalla() {
+    StockInsuficienteException ex =
+            assertThrows(StockInsuficienteException.class, () -&gt; callao.salida("ELE-017", 20));
+    assertEquals("Stock insuficiente de ELE-017: pide 20, hay 8", ex.getMessage());
+}
+
+@Test
+void ingresoConCeroFalla() {
+    assertThrows(IllegalArgumentException.class, () -&gt; callao.ingresar("ELE-017", 0));
+}</pre>
+
+    <h2>Buenas prácticas para JUnit 6</h2>
+    <div class="buenas">
+      <div class="ok">
+        <strong>✓ Un <code>@BeforeEach</code> que arma estado fresco</strong>
+        <p>Cada prueba parte de un <code>Inventario</code> nuevo (<code>preparar()</code>), así ninguna prueba depende del orden en que corran las demás.</p>
+      </div>
+      <div class="no">
+        <strong>✗ Reusar un campo mutable entre pruebas sin <code>@BeforeEach</code></strong>
+        <p>Si una prueba modifica el inventario y la siguiente lo da por "limpio", el resultado depende del orden de ejecución.</p>
+      </div>
+      <div class="ok">
+        <strong>✓ Nombres de método que explican el caso</strong>
+        <p><code>salidaMayorAlStockFalla</code>, <code>ingresoConCeroFalla</code>: se lee el reporte de pruebas sin abrir el código.</p>
+      </div>
+      <div class="no">
+        <strong>✗ Nombres genéricos como <code>test1</code>, <code>testInventario</code></strong>
+        <p>No dicen qué regla de negocio se está verificando ni qué se espera.</p>
+      </div>
+      <div class="ok">
+        <strong>✓ Una idea por prueba</strong>
+        <p><code>ingresoSumaAlStock</code> solo verifica la suma; <code>salidaRestaDelStock</code> solo la resta. Si una falla, se sabe exactamente qué regla se rompió.</p>
+      </div>
+      <div class="no">
+        <strong>✗ Una prueba gigante que hace ingreso, salida y error de stock</strong>
+        <p>Si falla, hay que leer todo el método para saber en qué línea se rompió.</p>
+      </div>
+      <div class="ok">
+        <strong>✓ <code>assertThrows</code> para las reglas de negocio</strong>
+        <p>Documenta que <code>salida(20)</code> con 8 disponibles <strong>debe</strong> lanzar <code>StockInsuficienteException</code>, no solo que "no explota".</p>
+      </div>
+      <div class="ok">
+        <strong>✓ Clases y métodos package-private</strong>
+        <p><code>class InventarioTest</code> y <code>void ingresoSumaAlStock()</code> no necesitan <code>public</code>: JUnit Platform los descubre igual, y es menos ruido.</p>
+      </div>
+    </div>
+
+    <p class="extra"><strong>Extra para JUnit 6 específicamente:</strong> el proyecto debe compilar al menos con <code>maven.compiler.release</code> 17 (el curso usa 25). Si se agrupan pruebas con <code>@Nested</code>, el orden de ejecución ahora es determinista por defecto (antes de JUnit 6 no estaba garantizado). Y si conviven pruebas JUnit 4 antiguas, hace falta agregar <code>junit-vintage-engine</code> aparte: ya no viene incluido por defecto.</p>
+  </main>
+</body>
+</html>
