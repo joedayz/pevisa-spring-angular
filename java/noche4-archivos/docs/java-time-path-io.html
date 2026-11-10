@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>java.time, Path y java.io</title>
+  <style>
+    :root { --ink:#14211c; --green:#16342c; --mint:#e7f3ee; --paper:#f6f3ec; --line:#ddd4c4; --rust:#8a341f; }
+    * { box-sizing: border-box; }
+    body { margin:0; font:17px/1.45 "Segoe UI", system-ui, sans-serif; color:var(--ink); background:var(--paper); }
+    header { background:var(--green); color:#f7f4ee; padding:1.6rem 7vw; }
+    header p { margin:0.3rem 0 0; color:#d5e6de; }
+    h1 { margin:0; font-size:2rem; }
+    main { padding:1.5rem 7vw 3rem; }
+    h2 { margin-top:2rem; }
+    h3 { margin-top:1.2rem; color:var(--green); }
+    a { color:#0f6e56; }
+    code, pre { font-family:ui-monospace, Menlo, Consolas, monospace; }
+    pre { background:#14211c; color:#f4f1ea; padding:0.9rem 1rem; border-radius:12px; overflow:auto; }
+    table { width:100%; border-collapse:collapse; background:#fff; margin-top:0.6rem; }
+    th, td { border-bottom:1px solid var(--line); text-align:left; padding:0.5rem 0.7rem; vertical-align:top; }
+    th { background:var(--green); color:white; }
+    td code { white-space:nowrap; }
+    .extra { background:var(--mint); border-radius:12px; padding:0.7rem 1rem; }
+
+    .mapa3 { display:grid; grid-template-columns:repeat(3,1fr); gap:0.8rem; margin-top:1rem; }
+    @media (max-width:800px) { .mapa3 { grid-template-columns:1fr; } }
+    .paq { border:1px solid var(--line); border-radius:14px; padding:0.9rem 1rem; background:#fff; text-align:center; }
+    .paq strong { display:block; color:var(--green); font-size:1.05rem; }
+    .paq span { color:#5c6b73; font-size:0.9rem; }
+
+    .fila { display:grid; grid-template-columns:1fr 1fr; gap:0.8rem; }
+    @media (max-width:800px) { .fila { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <p>Resumen del curso Java 25 Developer · noche 4 · el ejemplo es PEVISA</p>
+    <h1>java.time, Path y java.io</h1>
+  </header>
+  <main>
+    <p>En <a href="../aula/java/noche04-archivos/solution/Archivos.java">Archivos.java</a> conviven tres paquetes que resuelven cosas distintas: <code>java.time</code> para fechas, <code>java.nio.file</code> para rutas y operaciones modernas de archivo, y <code>java.io</code> para flujos de lectura/escritura.</p>
+
+    <div class="mapa3">
+      <div class="paq"><strong>java.time</strong><span>Fechas y horas: <code>LocalDate</code>, <code>LocalDateTime</code>, <code>DateTimeFormatter</code></span></div>
+      <div class="paq"><strong>java.nio.file</strong><span><code>Path</code> y <code>Files</code>: la forma moderna de leer/escribir un archivo completo</span></div>
+      <div class="paq"><strong>java.io</strong><span><code>FileWriter</code>, <code>BufferedReader</code>, <code>IOException</code>: flujos y try-with-resources</span></div>
+    </div>
+
+    <h2>java.time — métodos usados en el curso</h2>
+    <h3><code>LocalDate</code></h3>
+    <table>
+      <tr><th>Método</th><th>Qué hace</th><th>Ejemplo</th></tr>
+      <tr><td><code>LocalDate.of(y, m, d)</code></td><td>Crea una fecha fija, sin hora</td><td><code>LocalDate.of(2026, 11, 11)</code></td></tr>
+      <tr><td><code>LocalDate.now()</code></td><td>Fecha de hoy, según el reloj del sistema</td><td><code>LocalDate.now()</code></td></tr>
+      <tr><td><code>.plusDays(n)</code> / <code>.minusDays(n)</code></td><td>Suma o resta días; también existen <code>plusMonths</code>, <code>plusWeeks</code>, <code>plusYears</code></td><td><code>hoy.plusDays(7)</code> → fecha de reposición</td></tr>
+      <tr><td><code>.isBefore(otra)</code> / <code>.isAfter(otra)</code></td><td>Compara dos fechas</td><td><code>vencimiento.isBefore(hoy)</code></td></tr>
+      <tr><td><code>.getDayOfWeek()</code></td><td>Devuelve el día de la semana (<code>MONDAY</code>, …)</td><td><code>hoy.getDayOfWeek()</code></td></tr>
+      <tr><td><code>.format(formatter)</code></td><td>Convierte la fecha a texto con un <code>DateTimeFormatter</code></td><td><code>hoy.format(formato)</code></td></tr>
+    </table>
+
+    <h3><code>LocalDateTime</code></h3>
+    <table>
+      <tr><th>Método</th><th>Qué hace</th><th>Ejemplo</th></tr>
+      <tr><td><code>LocalDateTime.of(y, m, d, h, min)</code></td><td>Crea fecha y hora fijas</td><td><code>LocalDateTime.of(2026, 11, 11, 19, 30)</code></td></tr>
+      <tr><td><code>LocalDateTime.now()</code></td><td>Fecha y hora actuales</td><td><code>LocalDateTime.now()</code></td></tr>
+      <tr><td><code>.plusHours(n)</code> / <code>.plusMinutes(n)</code></td><td>Suma horas o minutos</td><td><code>ahora.plusMinutes(30)</code></td></tr>
+      <tr><td><code>.format(formatter)</code></td><td>Da el texto final que se escribe en el kardex</td><td><code>ahora.format(formato)</code> → <code>"11/11/2026 19:30"</code></td></tr>
+      <tr><td><code>.toLocalDate()</code> / <code>.toLocalTime()</code></td><td>Separa la parte de fecha o de hora</td><td><code>ahora.toLocalDate()</code></td></tr>
+    </table>
+
+    <h3><code>DateTimeFormatter</code></h3>
+    <table>
+      <tr><th>Método</th><th>Qué hace</th><th>Ejemplo</th></tr>
+      <tr><td><code>DateTimeFormatter.ofPattern(patron)</code></td><td>Crea un formateador con un patrón propio</td><td><code>DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")</code></td></tr>
+      <tr><td><code>formatter.format(temporal)</code></td><td>Convierte una fecha/hora a <code>String</code></td><td><code>formato.format(ahora)</code> (igual que <code>ahora.format(formato)</code>)</td></tr>
+      <tr><td><code>LocalDate.parse(texto, formatter)</code></td><td>Hace el camino inverso: de texto a fecha</td><td><code>LocalDate.parse("11/11/2026", formato)</code></td></tr>
+    </table>
+
+    <pre>LocalDate hoy = LocalDate.of(2026, 11, 11);
+System.out.println("Reposición: " + hoy.plusDays(7));
+
+DateTimeFormatter formato = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+LocalDateTime ahora = LocalDateTime.of(2026, 11, 11, 19, 30);
+String linea = ahora.format(formato) + " salida " + despues.codigo();</pre>
+
+    <h2><code>Path</code> y <code>Files</code> (java.nio.file)</h2>
+    <p>Es la forma moderna de trabajar con archivos: no hay que abrir y cerrar un flujo a mano para operaciones simples, <code>Files</code> lo hace en una sola línea y lanza <code>IOException</code> (checked) si algo falla.</p>
+    <table>
+      <tr><th>Método</th><th>Qué hace</th><th>Ejemplo</th></tr>
+      <tr><td><code>Path.of(ruta)</code></td><td>Crea una ruta, relativa o absoluta, sin tocar el disco todavía</td><td><code>Path.of("productos.csv")</code></td></tr>
+      <tr><td><code>.toAbsolutePath()</code></td><td>Convierte la ruta en absoluta</td><td><code>csv.toAbsolutePath()</code></td></tr>
+      <tr><td><code>.resolve(otra)</code></td><td>Concatena una ruta hija</td><td><code>Path.of("datos").resolve("productos.csv")</code></td></tr>
+      <tr><td><code>.getFileName()</code></td><td>Devuelve solo el nombre del archivo</td><td><code>csv.getFileName()</code> → <code>productos.csv</code></td></tr>
+      <tr><td><code>Files.writeString(path, texto)</code></td><td>Escribe (o sobrescribe) un archivo de texto completo</td><td><code>Files.writeString(csv, contenido)</code></td></tr>
+      <tr><td><code>Files.readString(path)</code></td><td>Lee el archivo entero como un solo <code>String</code></td><td><code>Files.readString(csv)</code></td></tr>
+      <tr><td><code>Files.readAllLines(path)</code></td><td>Lee el archivo como una <code>List&lt;String&gt;</code>, una línea por elemento</td><td><code>Files.readAllLines(csv)</code></td></tr>
+      <tr><td><code>Files.exists(path)</code></td><td>Comprueba si el archivo existe</td><td><code>Files.exists(csv)</code></td></tr>
+      <tr><td><code>Files.createDirectories(path)</code></td><td>Crea carpetas (y las que falten en el camino)</td><td><code>Files.createDirectories(Path.of("datos"))</code></td></tr>
+      <tr><td><code>Files.delete(path)</code> / <code>Files.copy(origen, destino)</code></td><td>Borra o copia un archivo</td><td><code>Files.delete(csv)</code></td></tr>
+    </table>
+
+    <pre>Path csv = Path.of("productos.csv");
+Files.writeString(csv, contenido);
+for (String linea : Files.readAllLines(csv)) {
+    if (linea.startsWith("codigo")) {
+        continue;
+    }
+    String[] partes = linea.split(";");
+    // ...
+}</pre>
+
+    <h2>Clases importantes de <code>java.io</code></h2>
+    <p><code>java.io</code> es más antiguo: trabaja con <strong>flujos</strong> (streams) que hay que abrir y cerrar. Casi todos sus métodos declaran <code>throws IOException</code> (checked), así que se usan con <code>try-with-resources</code> para que el flujo se cierre solo.</p>
+    <table>
+      <tr><th>Clase</th><th>Para qué sirve</th><th>Dónde aparece en el curso</th></tr>
+      <tr><td><code>FileWriter</code></td><td>Escribe texto en un archivo, carácter a carácter</td><td><code>new FileWriter("kardex.txt")</code> en <a href="../aula/java/noche04-archivos/solution/Archivos.java">Archivos.java</a></td></tr>
+      <tr><td><code>FileReader</code></td><td>Lee texto de un archivo, el complemento de <code>FileWriter</code></td><td>Se combina normalmente con <code>BufferedReader</code></td></tr>
+      <tr><td><code>BufferedWriter</code> / <code>BufferedReader</code></td><td>Envuelven a <code>FileWriter</code>/<code>FileReader</code> y agregan un buffer: menos accesos a disco, y <code>.readLine()</code> para leer línea por línea</td><td>Alternativa a <code>Files.readAllLines</code> cuando el archivo es muy grande</td></tr>
+      <tr><td><code>File</code></td><td>Representa una ruta de forma antigua (anterior a <code>Path</code>); sirve para <code>exists()</code>, <code>delete()</code>, <code>listFiles()</code></td><td>Hoy se prefiere <code>Path</code> + <code>Files</code> para casi todo</td></tr>
+      <tr><td><code>IOException</code></td><td>La excepción checked que casi todo método de <code>java.io</code> y <code>java.nio.file</code> puede lanzar</td><td><code>catch (IOException ex)</code> en <a href="../aula/java/noche04-archivos/solution/Archivos.java">Archivos.java</a>; ver también <a href="jerarquia-excepciones.html">jerarquia-excepciones.html</a></td></tr>
+      <tr><td><code>PrintWriter</code></td><td>Como <code>FileWriter</code> pero con <code>println</code>/<code>printf</code>, más cómodo para generar reportes</td><td>Útil para el kardex si se necesita formatear más líneas</td></tr>
+    </table>
+
+    <p>El patrón <strong>try-with-resources</strong>: el recurso se declara entre paréntesis después de <code>try</code>, y Java llama a su <code>close()</code> automáticamente al salir del bloque, incluso si hubo una excepción.</p>
+    <pre>try (FileWriter kardex = new FileWriter("kardex.txt")) {
+    kardex.write(ahora.format(formato) + " salida " + despues.codigo()
+            + " quedan " + despues.stock() + "\n");
+    System.out.println("Kardex escrito");
+} catch (IOException ex) {
+    System.out.println("java.io no pudo escribir: " + ex.getMessage());
+}</pre>
+
+    <div class="fila">
+      <p class="extra"><strong>¿<code>Files</code> o <code>java.io</code>?</strong> Para leer/escribir un archivo completo de una vez, <code>Files.writeString</code>/<code>Files.readAllLines</code> (java.nio.file) es más corto. Para ir escribiendo línea por línea mientras el programa corre —como el kardex, que se abre y queda listo para más escrituras— se usa <code>FileWriter</code> con try-with-resources (java.io).</p>
+      <p class="extra"><strong>Checked en los tres paquetes:</strong> <code>java.time</code> casi no lanza excepciones checked (solo <code>DateTimeParseException</code>, que es unchecked). <code>java.nio.file</code> y <code>java.io</code> sí: casi todo lanza <code>IOException</code>, por eso siempre aparecen junto a un <code>try/catch</code> o un <code>throws</code>.</p>
+    </div>
+  </main>
+</body>
+</html>
