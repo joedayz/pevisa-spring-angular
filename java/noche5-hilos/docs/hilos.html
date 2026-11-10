@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hilos en Java — teoría</title>
+  <style>
+    :root { --ink:#14211c; --green:#16342c; --mint:#e7f3ee; --paper:#f6f3ec; --line:#ddd4c4; --rust:#8a341f; }
+    * { box-sizing: border-box; }
+    body { margin:0; font:17px/1.45 "Segoe UI", system-ui, sans-serif; color:var(--ink); background:var(--paper); }
+    header { background:var(--green); color:#f7f4ee; padding:1.6rem 7vw; }
+    header p { margin:0.3rem 0 0; color:#d5e6de; }
+    h1 { margin:0; font-size:2rem; }
+    main { padding:1.5rem 7vw 3rem; }
+    h2 { margin-top:2rem; }
+    h3 { margin-top:1.2rem; color:var(--green); }
+    a { color:#0f6e56; }
+    code, pre { font-family:ui-monospace, Menlo, Consolas, monospace; }
+    pre { background:#14211c; color:#f4f1ea; padding:0.9rem 1rem; border-radius:12px; overflow:auto; }
+    table { width:100%; border-collapse:collapse; background:#fff; margin-top:0.6rem; }
+    th, td { border-bottom:1px solid var(--line); text-align:left; padding:0.5rem 0.7rem; vertical-align:top; }
+    th { background:var(--green); color:white; }
+    .extra { background:var(--mint); border-radius:12px; padding:0.7rem 1rem; }
+    .ok { border-left:4px solid #0f6e56; }
+    .no { border-left:4px solid var(--rust); }
+
+    .mapa2 { display:grid; grid-template-columns:1fr 1fr; gap:0.8rem; margin-top:1rem; }
+    @media (max-width:800px) { .mapa2 { grid-template-columns:1fr; } }
+    .paq { border:1px solid var(--line); border-radius:14px; padding:0.9rem 1rem; background:#fff; text-align:center; }
+    .paq strong { display:block; color:var(--green); font-size:1.05rem; }
+    .paq span { color:#5c6b73; font-size:0.9rem; }
+
+    .fila { display:grid; grid-template-columns:1fr 1fr; gap:0.8rem; }
+    @media (max-width:800px) { .fila { grid-template-columns:1fr; } }
+
+    .buenas { display:grid; grid-template-columns:1fr 1fr; gap:0.8rem; margin-top:0.6rem; }
+    @media (max-width:800px) { .buenas { grid-template-columns:1fr; } }
+    .buenas div { background:#fff; border:1px solid var(--line); border-radius:12px; padding:0.8rem 1rem; }
+
+    /* Ciclo de vida: flujo horizontal con flechas, solo CSS */
+    .ciclo { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:0; background:#fff; border:1px solid var(--line); border-radius:14px; padding:1.2rem 1rem; margin-top:1rem; }
+    .ciclo .estado { border:1px solid var(--line); border-radius:10px; padding:0.6rem 0.9rem; text-align:center; background:var(--paper); font-size:0.9rem; }
+    .ciclo .estado strong { display:block; color:var(--green); }
+    .ciclo .estado small { color:#5c6b73; }
+    .ciclo .flecha { padding:0 0.6rem; color:var(--line); font-size:1.3rem; }
+    .ciclo .ramal { display:flex; flex-direction:column; gap:0.5rem; margin:0 0.6rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <p>Resumen del curso Java 25 Developer · noche 5 · el ejemplo es PEVISA</p>
+    <h1>Hilos en Java: de <code>Thread</code> a los hilos virtuales</h1>
+  </header>
+  <main>
+    <p>El curso llega a los hilos al final de la noche 5, después de Maven y JUnit. El ejemplo es el mismo negocio: restar stock de <code>ELE-017</code>, pero ahora esa resta ocurre dentro de un <strong>hilo</strong> aparte, en <a href="../aula/java/noche05-hilos/solution/Hilos.java">noche05-hilos/solution/Hilos.java</a>.</p>
+
+    <h2>¿Qué es un hilo?</h2>
+    <p>Un <strong>proceso</strong> es un programa corriendo, con su propia memoria. Un <strong>hilo</strong> (<code>Thread</code>) es una línea de ejecución dentro de ese proceso: varios hilos comparten la misma memoria (variables, objetos), pero cada uno avanza con su propia pila de llamadas. El <code>main</code> de cualquier programa Java ya corre en un hilo, aunque nunca se mencione.</p>
+    <div class="mapa2">
+      <div class="paq"><strong>Concurrencia</strong><span>Varios hilos avanzan en el mismo periodo de tiempo; el sistema operativo o la JVM los va turnando, aunque haya un solo núcleo de CPU</span></div>
+      <div class="paq"><strong>Paralelismo</strong><span>Varios hilos corren al mismo tiempo, literalmente, cada uno en un núcleo de CPU distinto</span></div>
+    </div>
+
+    <h2>Hilos de plataforma vs. hilos virtuales</h2>
+    <p>Hasta hace poco, cada <code>Thread</code> en Java era un <strong>hilo de plataforma</strong>: la JVM reserva un hilo real del sistema operativo por cada uno, con varios megabytes de pila. Crear miles de ellos agota la memoria. Desde Java 21, los <strong>hilos virtuales</strong> (Project Loom) resuelven esto: la JVM los gestiona ella misma y puede correr millones, porque son mucho más livianos.</p>
+    <table>
+      <tr><th></th><th>Hilo de plataforma</th><th>Hilo virtual</th></tr>
+      <tr><td>Quién lo administra</td><td>El sistema operativo</td><td>La JVM</td></tr>
+      <tr><td>Costo de crear uno</td><td>Alto (memoria y tiempo)</td><td>Muy bajo</td></tr>
+      <tr><td>Cuántos se pueden tener</td><td>Miles</td><td>Millones</td></tr>
+      <tr><td>Cuándo conviene</td><td>Tareas que usan mucho CPU</td><td>Tareas que esperan mucho (I/O: red, disco, base de datos)</td></tr>
+      <tr><td>Cómo se crea</td><td><code>Thread.ofPlatform().start(tarea)</code></td><td><code>Thread.ofVirtual().start(tarea)</code></td></tr>
+    </table>
+    <p class="extra">Spring Boot usa hilos virtuales para atender peticiones HTTP con <code>spring.threads.virtual.enabled=true</code>: cada request espera seguido a la base de datos, así que un hilo virtual por petición es barato y no bloquea un hilo real del sistema operativo.</p>
+
+    <h2>Ciclo de vida de un hilo</h2>
+    <div class="ciclo">
+      <div class="estado"><strong>NEW</strong><small>creado, sin <code>start()</code></small></div>
+      <div class="flecha">→</div>
+      <div class="estado"><strong>RUNNABLE</strong><small>corriendo o listo para correr</small></div>
+      <div class="flecha">→</div>
+      <div class="ramal">
+        <div class="estado"><strong>BLOCKED</strong><small>espera un <code>synchronized</code></small></div>
+        <div class="estado"><strong>WAITING</strong><small><code>join()</code> sin límite</small></div>
+        <div class="estado"><strong>TIMED_WAITING</strong><small><code>sleep(ms)</code></small></div>
+      </div>
+      <div class="flecha">→</div>
+      <div class="estado"><strong>TERMINATED</strong><small>el método del hilo terminó</small></div>
+    </div>
+    <p>Un hilo vuelve de <code>BLOCKED</code>/<code>WAITING</code>/<code>TIMED_WAITING</code> a <code>RUNNABLE</code> cuando se cumple la condición que esperaba (se libera el bloqueo, termina el otro hilo, pasa el tiempo). De <code>TERMINATED</code> no se puede volver a arrancar: un <code>Thread</code> se usa una sola vez.</p>
+
+    <h2>Crear y arrancar un hilo</h2>
+    <p>El curso usa la API moderna de fábricas (<code>Thread.ofVirtual()</code> / <code>Thread.ofPlatform()</code>), más clara que las formas clásicas de heredar de <code>Thread</code> o implementar <code>Runnable</code>.</p>
+    <div class="fila">
+      <pre>// Forma del curso: hilo virtual con nombre
+Thread salida = Thread.ofVirtual()
+        .name("salida-callao")
+        .start(() -&gt; stock.addAndGet(-2));
+
+salida.join();   // esperar a que termine
+System.out.println(salida.isVirtual()); // true</pre>
+      <pre>// Formas clásicas (menos usadas hoy)
+class Salida extends Thread {
+    public void run() { stock.addAndGet(-2); }
+}
+
+Runnable tarea = () -&gt; stock.addAndGet(-2);
+new Thread(tarea).start();</pre>
+    </div>
+    <table>
+      <tr><th>Método</th><th>Qué hace</th></tr>
+      <tr><td><code>Thread.ofVirtual()</code> / <code>Thread.ofPlatform()</code></td><td>Devuelve un <em>builder</em> para configurar el hilo antes de crearlo</td></tr>
+      <tr><td><code>.name("texto")</code></td><td>Le pone un nombre, útil para depurar cuando hay varios hilos</td></tr>
+      <tr><td><code>.start(tarea)</code></td><td>Crea el hilo y lo arranca de inmediato con esa tarea (un <code>Runnable</code>, normalmente una lambda)</td></tr>
+      <tr><td><code>.unstarted(tarea)</code></td><td>Crea el hilo pero no lo arranca; se arranca después con <code>.start()</code></td></tr>
+      <tr><td><code>hilo.join()</code></td><td>Bloquea al hilo que llama hasta que <code>hilo</code> termine; sin esto, <code>main</code> podría imprimir el stock antes de que la resta ocurra</td></tr>
+      <tr><td><code>hilo.isVirtual()</code></td><td>Devuelve <code>true</code> si es un hilo virtual</td></tr>
+      <tr><td><code>Thread.sleep(ms)</code></td><td>Pausa el hilo actual (y solo el actual) por un tiempo</td></tr>
+    </table>
+
+    <h2>El problema de fondo: datos compartidos</h2>
+    <p>Si dos hilos leen y escriben la <strong>misma</strong> variable al mismo tiempo, puede ocurrir una <strong>condición de carrera</strong> (race condition): los dos leen el valor viejo antes de que el otro guarde el nuevo, y una de las dos restas "se pierde". Por eso el curso no usa un <code>int stock</code> normal, sino <code>AtomicInteger</code>: sus operaciones (<code>addAndGet</code>, <code>incrementAndGet</code>, <code>get</code>) son atómicas, es decir, no se pueden interrumpir a la mitad.</p>
+    <pre>AtomicInteger stock = new AtomicInteger(8);
+Thread salida = Thread.ofVirtual().name("salida-callao").start(() -&gt; stock.addAndGet(-2));
+salida.join();
+System.out.println("Stock de ELE-017 en Callao: " + stock.get()); // 6, siempre</pre>
+    <table>
+      <tr><th>Herramienta</th><th>Para qué sirve</th></tr>
+      <tr><td><code>AtomicInteger</code>, <code>AtomicLong</code>, <code>AtomicReference&lt;T&gt;</code></td><td>Variables con operaciones atómicas, sin necesidad de bloquear nada</td></tr>
+      <tr><td><code>synchronized</code></td><td>Marca un bloque o método para que un solo hilo lo ejecute a la vez; el resto esperan en <code>BLOCKED</code></td></tr>
+      <tr><td><code>ExecutorService</code></td><td>Administra un grupo de hilos reutilizables; en vez de crear un <code>Thread</code> por tarea, se le entregan tareas y él decide cómo repartirlas</td></tr>
+      <tr><td><code>Executors.newVirtualThreadPerTaskExecutor()</code></td><td>Un <code>ExecutorService</code> que crea un hilo virtual nuevo por cada tarea que recibe</td></tr>
+    </table>
+    <p class="extra">Si sobra tiempo, el curso lo extiende con <code>ejemplos-concurrencia</code>: un <code>ExecutorService</code>, <code>synchronized</code> y una carrera real de dos salidas sobre el mismo stock, para ver en vivo qué pasa sin <code>AtomicInteger</code> (ver <a href="../aula/java/guia.html">guia.html</a>, noche 5).</p>
+
+    <h2>Buenas prácticas</h2>
+    <div class="buenas">
+      <div class="ok">
+        <strong>✓ Hilos virtuales para tareas de espera (I/O)</strong>
+        <p>Leer un archivo, llamar a una base de datos o a otra API: el hilo pasa la mayor parte del tiempo esperando, así que un hilo virtual es barato y no desperdicia un hilo real del sistema operativo.</p>
+      </div>
+      <div class="no">
+        <strong>✗ Miles de hilos de plataforma para lo mismo</strong>
+        <p>Cada uno reserva varios MB de pila; mil conexiones concurrentes con hilos de plataforma pueden agotar la memoria antes de agotar el CPU.</p>
+      </div>
+      <div class="ok">
+        <strong>✓ Variables compartidas con <code>Atomic*</code> o <code>synchronized</code></strong>
+        <p>El curso usa <code>AtomicInteger</code> para el stock porque dos hilos podrían tocarlo a la vez.</p>
+      </div>
+      <div class="no">
+        <strong>✗ Un <code>int</code> normal modificado desde varios hilos</strong>
+        <p><code>stock = stock - 2</code> no es atómico: leer, restar y guardar son tres pasos, y otro hilo puede meterse en medio.</p>
+      </div>
+      <div class="ok">
+        <strong>✓ <code>join()</code> antes de leer el resultado</strong>
+        <p><code>salida.join()</code> garantiza que la resta ya ocurrió antes de imprimir el stock.</p>
+      </div>
+      <div class="no">
+        <strong>✗ Leer el resultado sin esperar al hilo</strong>
+        <p>Sin <code>join()</code>, <code>main</code> puede imprimir el stock viejo, antes de que el hilo termine de restar.</p>
+      </div>
+      <div class="ok">
+        <strong>✓ Un <code>ExecutorService</code> (o <code>try</code>-with-resources) para muchas tareas</strong>
+        <p>Pedirle tareas a un <code>ExecutorService</code> en vez de crear un <code>Thread</code> por cada una.</p>
+      </div>
+      <div class="no">
+        <strong>✗ <code>Thread.stop()</code> o ignorar <code>InterruptedException</code></strong>
+        <p><code>stop()</code> está obsoleto y es peligroso (puede dejar datos a medio escribir); una <code>InterruptedException</code> atrapada y descartada esconde que alguien pidió cancelar el hilo.</p>
+      </div>
+    </div>
+
+    <h2>Ejemplos: de lo simple a un ejemplo robusto</h2>
+    <p>Los seis ejemplos siguen el mismo negocio (stock de <code>ELE-017</code>) y suben en complejidad: primero una sola herramienta a la vez, al final todas combinadas en un simulador de salidas concurrentes.</p>
+    <pre>import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.IntStream;</pre>
+
+    <h3>1 · <code>AtomicInteger</code> solo</h3>
+    <p>Lo más simple: una variable con operaciones atómicas, sin bloqueos explícitos.</p>
+    <pre>AtomicInteger stock = new AtomicInteger(8);
+
+stock.incrementAndGet();     // 9
+stock.addAndGet(-3);         // 6
+stock.get();                 // 6
+stock.compareAndSet(6, 0);   // true: solo cambia si todavía vale 6
+stock.compareAndSet(6, 99);  // false: ya no vale 6, no cambia nada</pre>
+    <p class="extra"><code>compareAndSet(esperado, nuevo)</code> es la base de casi toda la concurrencia sin bloqueos (<em>lock-free</em>): "cambia el valor solo si nadie lo tocó mientras tanto".</p>
+
+    <h3>2 · <code>synchronized</code></h3>
+    <p>Cuando la regla de negocio necesita <strong>leer y decidir</strong> antes de escribir (no alcanza con una sola operación atómica), <code>synchronized</code> protege el bloque completo: un solo hilo a la vez puede ejecutarlo.</p>
+    <pre>class Almacen {
+    private int stock = 8;
+
+    synchronized void salida(int cantidad) {
+        if (cantidad &gt; stock) {
+            throw new StockInsuficienteException("ELE-017", cantidad, stock);
+        }
+        stock -= cantidad;
+    }
+
+    synchronized int stock() {
+        return stock;
+    }
+}</pre>
+    <p class="extra">Las dos operaciones (leer <code>stock</code> y validar, luego restar) ocurren como una sola unidad. Sin <code>synchronized</code>, dos hilos podrían leer <code>8</code> a la vez, ambos aprobar una salida de 6, y terminar en <code>-4</code>.</p>
+
+    <h3>3 · <code>Lock</code> / <code>ReentrantLock</code></h3>
+    <p>Hace lo mismo que <code>synchronized</code>, pero con más control: se puede <em>intentar</em> el bloqueo sin quedar atascado (<code>tryLock</code>), o con un tiempo límite.</p>
+    <pre>class AlmacenConLock {
+    private int stock = 8;
+    private final Lock candado = new ReentrantLock();
+
+    void salida(int cantidad) {
+        candado.lock();
+        try {
+            if (cantidad &gt; stock) {
+                throw new StockInsuficienteException("ELE-017", cantidad, stock);
+            }
+            stock -= cantidad;
+        } finally {
+            candado.unlock(); // siempre en finally, incluso si hay excepción
+        }
+    }
+
+    boolean intentarSalida(int cantidad) {
+        if (!candado.tryLock()) {
+            return false; // otro hilo ya tiene el candado; no esperamos
+        }
+        try {
+            if (cantidad &gt; stock) return false;
+            stock -= cantidad;
+            return true;
+        } finally {
+            candado.unlock();
+        }
+    }
+}</pre>
+    <p class="extra"><strong>¿<code>synchronized</code> o <code>Lock</code>?</strong> <code>synchronized</code> alcanza para el caso normal, es más corto y el candado se libera solo. <code>Lock</code> se usa cuando hace falta <code>tryLock</code>, un tiempo de espera, o varios candados distintos para distintas partes del estado.</p>
+
+    <h3>4 · <code>ExecutorService</code> con hilos de plataforma</h3>
+    <p>En vez de crear un <code>Thread</code> por cada tarea, se le entregan tareas a un <strong>pool</strong> fijo que las reparte entre unos pocos hilos reutilizables. Útil para trabajo que usa CPU (cálculos), no para esperar en red.</p>
+    <pre>List&lt;String&gt; pedidos = List.of("ELE-017", "BOS-100", "NEU-190", "ELE-017");
+Almacen callao = new Almacen();
+
+try (ExecutorService pool = Executors.newFixedThreadPool(4)) {
+    List&lt;Future&lt;?&gt;&gt; tareas = pedidos.stream()
+            .map(codigo -&gt; pool.submit(() -&gt; callao.salida(codigo, 2)))
+            .toList();
+
+    for (Future&lt;?&gt; tarea : tareas) {
+        tarea.get(); // espera cada una y relanza su excepción, si falló
+    }
+} // el try-with-resources llama a shutdown() y espera a que terminen
+
+System.out.println("Stock final: " + callao.stock());</pre>
+    <p class="extra">Desde Java 19, <code>ExecutorService</code> implementa <code>AutoCloseable</code>: el <code>try</code>-with-resources cierra el pool (<code>shutdown()</code> + espera) automáticamente, sin necesidad de un bloque <code>finally</code> aparte.</p>
+
+    <h3>5 · Hilos virtuales con <code>ExecutorService</code></h3>
+    <p>Mismo código que el ejemplo anterior, pero con un ejecutor que crea <strong>un hilo virtual por tarea</strong>. Conviene cuando hay muchísimas tareas que esperan (red, disco, base de datos), como simular 1000 clientes pidiendo salida de stock a la vez.</p>
+    <pre>try (ExecutorService hilos = Executors.newVirtualThreadPerTaskExecutor()) {
+    List&lt;Future&lt;Boolean&gt;&gt; resultados = IntStream.range(0, 1000)
+            .mapToObj(i -&gt; hilos.submit(() -&gt; callao.intentarSalida(1)))
+            .toList();
+
+    long exitosas = resultados.stream().filter(f -&gt; {
+        try {
+            return f.get();
+        } catch (Exception ex) {
+            return false;
+        }
+    }).count();
+
+    System.out.println("Salidas aprobadas: " + exitosas);
+}</pre>
+    <p class="extra">La diferencia con el ejemplo 4 es una sola línea: <code>Executors.newFixedThreadPool(4)</code> → <code>Executors.newVirtualThreadPerTaskExecutor()</code>. El resto del código (<code>submit</code>, <code>Future</code>, try-with-resources) es idéntico.</p>
+
+    <h3>6 · Ejemplo robusto: simulador de salidas concurrentes</h3>
+    <p>Combina <code>ConcurrentHashMap</code> (un <code>AtomicInteger</code> de stock por código), un bucle <em>compare-and-set</em> para la resta sin bloqueos, un <code>ReentrantLock</code> solo para el kardex (una lista que sí necesita bloqueo), e hilos virtuales para simular 50 salidas a la vez.</p>
+    <pre>class AlmacenConcurrente {
+    private final Map&lt;String, AtomicInteger&gt; stock = new ConcurrentHashMap&lt;&gt;();
+    private final Lock candadoKardex = new ReentrantLock();
+    private final List&lt;String&gt; kardex = new ArrayList&lt;&gt;(); // protegida por candadoKardex
+
+    AlmacenConcurrente(Map&lt;String, Integer&gt; inicial) {
+        inicial.forEach((codigo, cantidad) -&gt; stock.put(codigo, new AtomicInteger(cantidad)));
+    }
+
+    boolean salida(String codigo, int cantidad) {
+        AtomicInteger contador = stock.get(codigo);
+        if (contador == null) {
+            return false;
+        }
+        int actual;
+        do {
+            actual = contador.get();
+            if (cantidad &gt; actual) {
+                return false; // sin stock suficiente, no se toca nada
+            }
+        } while (!contador.compareAndSet(actual, actual - cantidad));
+
+        registrar(codigo, cantidad); // este paso sí necesita un candado
+        return true;
+    }
+
+    private void registrar(String codigo, int cantidad) {
+        candadoKardex.lock();
+        try {
+            kardex.add(codigo + " -" + cantidad);
+        } finally {
+            candadoKardex.unlock();
+        }
+    }
+
+    int stockDe(String codigo) {
+        return stock.getOrDefault(codigo, new AtomicInteger(0)).get();
+    }
+
+    List&lt;String&gt; kardex() {
+        candadoKardex.lock();
+        try {
+            return List.copyOf(kardex);
+        } finally {
+            candadoKardex.unlock();
+        }
+    }
+}
+
+public class SimuladorAlmacen {
+    public static void main(String[] args) throws Exception {
+        AlmacenConcurrente callao = new AlmacenConcurrente(Map.of("ELE-017", 100));
+
+        try (ExecutorService hilos = Executors.newVirtualThreadPerTaskExecutor()) {
+            List&lt;Future&lt;Boolean&gt;&gt; resultados = new ArrayList&lt;&gt;();
+            for (int i = 0; i &lt; 50; i++) {
+                resultados.add(hilos.submit(() -&gt; callao.salida("ELE-017", 2)));
+            }
+            for (Future&lt;Boolean&gt; f : resultados) {
+                f.get(); // propaga cualquier excepción ocurrida dentro del hilo
+            }
+        } // el try-with-resources espera a que las 50 tareas terminen
+
+        System.out.println("Stock final: " + callao.stockDe("ELE-017"));       // siempre 0
+        System.out.println("Movimientos en el kardex: " + callao.kardex().size()); // siempre 50
+    }
+}</pre>
+    <table>
+      <tr><th>Pieza</th><th>Por qué está ahí</th></tr>
+      <tr><td><code>ConcurrentHashMap</code></td><td>Varios hilos piden <code>stock.get(codigo)</code> a la vez; un <code>HashMap</code> normal puede corromperse con escrituras concurrentes</td></tr>
+      <tr><td>Bucle <code>do { } while (!compareAndSet(...))</code></td><td>Lee el stock, valida y resta como una sola operación lógica, sin bloquear a los demás hilos; si otro hilo cambió el valor en el medio, reintenta solo</td></tr>
+      <tr><td><code>ReentrantLock</code> en el kardex</td><td><code>ArrayList</code> no es segura entre hilos; aquí sí hace falta un candado real, porque agregar a la lista no tiene una versión atómica como <code>AtomicInteger</code></td></tr>
+      <tr><td><code>Executors.newVirtualThreadPerTaskExecutor()</code></td><td>Simula 50 "clientes" concurrentes sin gastar 50 hilos reales del sistema operativo</td></tr>
+      <tr><td><code>Future&lt;Boolean&gt;</code> + <code>f.get()</code></td><td>Espera cada tarea y relanza cualquier excepción que haya ocurrido dentro de ella; sin esto, un error en un hilo podría pasar desapercibido</td></tr>
+      <tr><td><code>try</code>-with-resources sobre el <code>ExecutorService</code></td><td>Garantiza que <code>main</code> no sigue hasta que las 50 tareas terminaron, sin escribir <code>shutdown()</code> a mano</td></tr>
+    </table>
+    <p class="extra">El resultado es determinista a propósito: 50 salidas de 2 unidades sobre 100 de stock siempre dan <code>0</code> y siempre 50 líneas de kardex, sin importar en qué orden corrieron los hilos. Si se cambiara <code>AtomicInteger</code> por un <code>int</code> suelto, o se quitara el <code>ReentrantLock</code> del kardex, ambos números dejarían de ser confiables.</p>
+  </main>
+</body>
+</html>
