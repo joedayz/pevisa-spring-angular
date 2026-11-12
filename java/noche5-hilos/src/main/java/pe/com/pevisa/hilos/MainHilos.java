@@ -2,10 +2,7 @@ package pe.com.pevisa.hilos;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -119,6 +116,35 @@ public class MainHilos{
 
         System.out.println("Almacen tras 20 salidas via ExecutorService: " + callao.stock() +
                 " (esperado 30)");
+
+        // CyclicBarrier: varios hilos virtuales deben completar cada "ronda" juntos
+        // antes de pasar a la siguiente ronda. A diferencia de CountDownLatch, el CyclicBarrier se puede reutilizar para varias rondas de sincronización.
+
+        int trabajadores = 5;
+        CyclicBarrier barrera = new CyclicBarrier(trabajadores, () -> {
+            System.out.println("Todos los trabajadores han completado la ronda.");
+        });
+
+        List<Thread> hilosRonda = new ArrayList<>();
+        for(int i = 0; i < trabajadores; i++){
+            int id = i;
+            hilosRonda.add(Thread.ofVirtual().start(() -> {
+                for (int ronda= 1; ronda <=4 ; ronda++) {
+                    System.out.println("Hilo "+ id + " termina ronda " + ronda);
+                    try {
+                        barrera.await(); // Espera a que todos los hilos lleguen a este punto
+                    } catch (InterruptedException | BrokenBarrierException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+
+            }));
+        }
+
+        for(Thread hilo: hilosRonda){
+            hilo.join();
+        }
+
 
     }
 
