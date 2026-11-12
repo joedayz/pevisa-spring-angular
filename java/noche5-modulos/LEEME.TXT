@@ -1,0 +1,136 @@
+===========================================================
+ NOCHE 5 - MODULOS (JPMS: Java Platform Module System)
+===========================================================
+
+PARTE 0: UN SOLO MODULO (src/main/java)
+-----------------------------------------------------------
+Modulo "pevisa.stock" con la clase Almacen.
+
+Compilar:
+  javac -d out src/main/java/module-info.java $(find src/main/java -name '*.java')
+
+Ejecutar:
+  java --module-path out -m pevisa.stock/pe.com.pevisa.stock.Almacen
+
+Salida esperada:
+  Callao Av. Elmer Faucett 1234
+
+
+===========================================================
+ FASE 1: VARIOS MODULOS (requires / exports / exports ... to)
+===========================================================
+Carpeta: demo-modulos/fase1-requires-exports
+
+Estructura (cada carpeta de primer nivel = un modulo, su nombre
+debe coincidir con el nombre declarado en su module-info.java):
+
+  fase1-requires-exports/
+    pevisa.stock/          -> module-info.java: pevisa.stock
+      pe/com/pevisa/stock/Almacen.java
+      pe/com/pevisa/stock/Producto.java
+      pe/com/pevisa/stock/interno/Auditoria.java
+    pevisa.ventas/         -> module-info.java: pevisa.ventas
+      pe/com/pevisa/ventas/Venta.java
+    pevisa.app/            -> module-info.java: pevisa.app
+      pe/com/pevisa/app/App.java
+
+Que se demuestra:
+  - "exports pe.com.pevisa.stock;"
+      Paquete publico: cualquier modulo que haga "requires pevisa.stock"
+      puede usar sus clases (Almacen, Producto).
+
+  - "exports pe.com.pevisa.stock.interno to pevisa.ventas;"
+      Export CALIFICADO: solo el modulo pevisa.ventas puede ver el
+      paquete pe.com.pevisa.stock.interno (clase Auditoria). Ningun
+      otro modulo (ni siquiera pevisa.app) puede verlo.
+
+  - "requires transitive pevisa.stock;" (en pevisa.ventas)
+      pevisa.app declara "requires pevisa.ventas" unicamente, pero
+      como pevisa.ventas re-expone pevisa.stock con "transitive",
+      pevisa.app puede usar Almacen y Producto SIN declarar
+      "requires pevisa.stock" el mismo.
+
+Compilar (multi-modulo con --module-source-path):
+  cd demo-modulos/fase1-requires-exports
+  javac -d out --module-source-path . $(find . -name '*.java')
+
+Ejecutar:
+  java --module-path out -m pevisa.app/pe.com.pevisa.app.App
+
+Salida esperada:
+  Almacen [Callao Av. Elmer Faucett 1234] recibio: Laptop (10 unidades)
+  [AUDITORIA interna de stock] Se vendio Laptop (10 unidades)
+  Venta registrada desde almacen: Callao Av. Elmer Faucett 1234
+
+Ejercicio para los alumnos:
+  En pevisa.app/pe/com/pevisa/app/App.java descomenten la linea:
+    import pe.com.pevisa.stock.interno.Auditoria;
+  y vuelvan a compilar. Deberia fallar con:
+    error: package pe.com.pevisa.stock.interno is not visible
+    (package pe.com.pevisa.stock.interno is declared in module pevisa.stock,
+     which does not export it to module pevisa.app)
+  Esto demuestra que el export calificado NO viaja por el "requires
+  transitive": solo pevisa.ventas tiene permiso, aunque pevisa.app
+  "vea" el modulo pevisa.stock de forma transitiva.
+
+
+===========================================================
+ FASE 2: OPENS (reflexion en tiempo de ejecucion)
+===========================================================
+Carpeta: demo-modulos/fase2-opens
+
+Estructura:
+
+  fase2-opens/
+    pevisa.stock/          -> module-info.java: pevisa.stock
+      pe/com/pevisa/stock/modelo/ProductoDTO.java
+    pevisa.framework/      -> module-info.java: pevisa.framework
+      pe/com/pevisa/framework/Mapper.java
+    pevisa.app/            -> module-info.java: pevisa.app
+      pe/com/pevisa/app/App.java
+
+Idea: pevisa.framework simula un framework de serializacion (como
+Jackson o Gson) que recibe un Object cualquiera y usa reflexion
+(Field.setAccessible + Field.get) para leer TODOS sus campos,
+incluidos los privados.
+
+Que se demuestra:
+  - "exports pe.com.pevisa.stock.modelo;"
+      Da acceso normal (compilacion + runtime) a la clase publica
+      ProductoDTO y sus miembros publicos. pevisa.app puede hacer
+      "new ProductoDTO(...)" gracias a esto.
+
+  - "opens pe.com.pevisa.stock.modelo to pevisa.framework;"
+      AUNQUE el paquete ya este exportado, eso NO basta para que un
+      framework haga reflexion profunda sobre campos PRIVADOS
+      (field.setAccessible(true)). Para eso se necesita "opens"
+      (aqui calificado solo para pevisa.framework).
+
+  - Variantes que pueden mencionar en clase (no estan en el codigo,
+    son solo para explicar en el pizarron):
+      opens pe.com.pevisa.stock.modelo;              -> abierto a TODOS los modulos
+      open module pevisa.stock { ... }               -> abre TODOS los paquetes del modulo a todos
+
+Compilar:
+  cd demo-modulos/fase2-opens
+  javac -d out --module-source-path . $(find . -name '*.java')
+
+Ejecutar:
+  java --module-path out -m pevisa.app/pe.com.pevisa.app.App
+
+Salida esperada:
+  {"nombre":"Laptop","precio":"2999.9"}
+
+Ejercicio para los alumnos:
+  En pevisa.stock/module-info.java borren (o comenten) la linea:
+    opens pe.com.pevisa.stock.modelo to pevisa.framework;
+  Recompilen y ejecuten de nuevo. Deberia fallar en tiempo de
+  ejecucion (no en compilacion) con:
+    Exception in thread "main" java.lang.reflect.InaccessibleObjectException:
+    Unable to make field private final java.lang.String
+    pe.com.pevisa.stock.modelo.ProductoDTO.nombre accessible: module
+    pevisa.stock does not "opens pe.com.pevisa.stock.modelo" to module
+    pevisa.framework
+  Esto demuestra la diferencia clave entre "exports" (API publica,
+  chequeada en compilacion) y "opens" (acceso reflexivo, chequeado
+  recien en tiempo de ejecucion).
