@@ -1,7 +1,8 @@
 package pe.com.pevisa.genericos;
 
 
-import java.util.List;
+import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 class Caja<T>{
@@ -65,5 +66,30 @@ public class Fundamentos {
         System.out.println(uno + ", " + dos);
 
         IO.println("mayor entero = " + Utiles.mayor(List.of(3, 9, 4)));
+
+        IO.println("--- diamante y var");
+        Map<String, List<Integer>> notas = new HashMap<>(); // Java 7
+        var mapa = new TreeMap<String, List<Integer>>();
+        mapa.put("Pevisa", List.of(20, 18, 19));
+
+        var lista = new ArrayList<>(); // ArrayList<Object>
+        lista.add("Pevisa");
+        lista.add(1);
+
+        Comparator<String> cmp = (s1, s2) -> s1.length() - s2.length();
+
+        IO.println(cmp.compare("a", "abc"));
+
+
+        BiFunction<Integer, Integer, Integer> suma = (var a, var b) -> a + b; // var en lambdas (java 11)
+        IO.println("suma = " + suma.apply(3, 4));
+
+
+
+
+
+
+
+
     }
 }
