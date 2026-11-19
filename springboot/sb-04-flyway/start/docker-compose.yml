@@ -1,0 +1,40 @@
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: pevisa-postgres
+    environment:
+      POSTGRES_DB: pevisa_db
+      POSTGRES_USER: pevisa
+      POSTGRES_PASSWORD: pevisa123
+    ports:
+      - "5432:5432"
+    volumes:
+      - pevisa_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pevisa -d pevisa_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-legado:
+    image: postgres:16-alpine
+    container_name: pevisa-postgres-legado
+    environment:
+      POSTGRES_DB: pevisa_legado
+      POSTGRES_USER: legado
+      POSTGRES_PASSWORD: legado123
+    ports:
+      - "5433:5432"
+    volumes:
+      - pevisa_legado_data:/var/lib/postgresql/data
+      - ./src/main/resources/legado-init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U legado -d pevisa_legado"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pevisa_pgdata:
+  pevisa_legado_data:

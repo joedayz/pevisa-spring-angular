@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SB-04 · Flyway · PEVISA</title>
+<style>
+  :root { --verde:#16342c; --papel:#f6f3ec; --linea:#ddd4c4; --menta:#e7f3ee; --rojo:#c0392b; --azul:#1a5276; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:17px/1.5 "Segoe UI",system-ui,sans-serif; background:var(--papel); color:#14211c; }
+  header { background:var(--verde); color:#f7f4ee; padding:1.6rem 7vw; }
+  header h1 { margin:0; font-size:2rem; }
+  header p  { margin:.3rem 0 0; opacity:.8; }
+  main { padding:1rem 7vw 3rem; max-width:1100px; }
+  h2 { margin-top:2rem; color:var(--verde); border-bottom:2px solid var(--linea); padding-bottom:.3rem; }
+  h3 { margin-top:1.4rem; color:#2c5f52; }
+  pre { background:#14211c; color:#f4f1ea; padding:1rem 1.2rem; border-radius:10px; overflow-x:auto; font-size:.91rem; line-height:1.5; }
+  code { font-family:ui-monospace,Menlo,Consolas,monospace; }
+  pre code { color:inherit; }
+  .caja   { background:var(--menta); border-radius:10px; padding:.8rem 1.1rem; margin:.8rem 0; }
+  .aviso  { background:#fef9e7; border-left:4px solid #f1c40f; padding:.7rem 1rem; border-radius:6px; margin:.8rem 0; }
+  .peligro{ background:#fdedec; border-left:4px solid var(--rojo); padding:.7rem 1rem; border-radius:6px; margin:.8rem 0; }
+  .tabla  { width:100%; border-collapse:collapse; background:#fff; margin:.8rem 0; }
+  .tabla th,.tabla td { border:1px solid var(--linea); padding:.5rem .8rem; text-align:left; vertical-align:top; }
+  .tabla th { background:var(--verde); color:#fff; }
+  .linea-tiempo { display:flex; flex-direction:column; gap:.5rem; margin:.8rem 0; }
+  .lt-item { display:flex; gap:1rem; align-items:flex-start; }
+  .lt-version { background:var(--verde); color:#fff; border-radius:6px; padding:.2rem .7rem; font-family:monospace; font-size:.9rem; white-space:nowrap; min-width:90px; text-align:center; }
+  .lt-desc { padding-top:.15rem; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+  @media(max-width:750px){.grid2{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SB-04 · Migraciones de BD con Flyway</h1>
+  <p>PEVISA Repuestos · Spring Boot 3.3 · Java 21 · Sesión 4 de 15</p>
+</header>
+
+<main>
+
+<h2>El problema que resuelve Flyway</h2>
+
+<p>Desde SB-01 hasta SB-03 usamos <code>ddl-auto: create-drop</code>.
+Cada reinicio de la app destruye todas las tablas y las vuelve a crear vacías.
+Eso funciona en un demo de 2 horas. En un proyecto real con un equipo de 5 personas:</p>
+
+<div class="peligro">
+  <strong>Sin Flyway, en un equipo real:</strong>
+  <ul style="margin:.4rem 0">
+    <li>Dev A agrega columna <code>marca</code> en su local con un ALTER TABLE a mano</li>
+    <li>Dev B no sabe del cambio — su app explota porque la entidad JPA tiene el campo pero la BD no</li>
+    <li>QA tiene un schema diferente al de producción</li>
+    <li>Nadie sabe qué versión del schema tiene cada entorno</li>
+    <li>En producción alguien corre un script a mano que nadie documentó</li>
+  </ul>
+</div>
+
+<div class="caja">
+  <strong>Con Flyway:</strong> el schema evoluciona igual que el código — con commits, revisiones y un historial auditado. Cada entorno siempre está exactamente en la versión correcta.
+</div>
+
+<h2>El cambio más importante de esta sesión</h2>
+
+<div class="grid2">
+<div>
+<h3>SB-01 a SB-03</h3>
+<pre><code>jpa:
+  hibernate:
+    ddl-auto: create-drop
+# Hibernate destruye y recrea
+# las tablas en cada reinicio.
+# Nunca usar en producción.</code></pre>
+</div>
+<div>
+<h3>SB-04 en adelante</h3>
+<pre><code>jpa:
+  hibernate:
+    ddl-auto: validate
+# Hibernate SOLO verifica que
+# el schema existente coincide
+# con las entidades JPA.
+# Flyway es quien crea el schema.</code></pre>
+</div>
+</div>
+
+<h2>Convención de nombres</h2>
+
+<pre><code>src/main/resources/db/migration/
+├── V1__crear_tabla_repuestos.sql     ← versión 1
+├── V2__datos_iniciales_repuestos.sql ← versión 2
+├── V3__agregar_columna_marca.sql     ← versión 3
+├── V4__constraint_division_check.sql ← versión 4
+└── R__vista_inventario.sql           ← repetible (sin versión)
+
+Patrón: V{version}__{descripcion}.sql
+         ↑              ↑↑
+         V mayúscula    dos guiones bajos (obligatorio)
+</code></pre>
+
+<table class="tabla">
+  <thead><tr><th>Prefijo</th><th>Nombre</th><th>Comportamiento</th></tr></thead>
+  <tbody>
+    <tr><td><code>V</code></td><td>Versionada</td><td>Se ejecuta <strong>una sola vez</strong>. Si la modificas después de ejecutarla, Flyway falla por checksum inválido.</td></tr>
+    <tr><td><code>U</code></td><td>Undo (Pro)</td><td>Revierte la versión anterior. Solo en Flyway Pro.</td></tr>
+    <tr><td><code>R</code></td><td>Repetible</td><td>Se ejecuta <strong>cada vez que cambia</strong> su contenido. Ideal para vistas, funciones y procedimientos.</td></tr>
+  </tbody>
+</table>
+
+<h2>Historial de migraciones de esta sesión</h2>
+
+<div class="linea-tiempo">
+  <div class="lt-item">
+    <span class="lt-version">V1</span>
+    <div class="lt-desc">
+      <strong>Crear tabla repuestos</strong><br>
+      Schema base: columnas, constraints UNIQUE y CHECK, índice en división, índice full-text GIN.
+    </div>
+  </div>
+  <div class="lt-item">
+    <span class="lt-version">V2</span>
+    <div class="lt-desc">
+      <strong>Datos iniciales</strong><br>
+      10 repuestos de ejemplo con divisiones reales de PEVISA. Los datos de referencia también se versionan.
+    </div>
+  </div>
+  <div class="lt-item">
+    <span class="lt-version">V3</span>
+    <div class="lt-desc">
+      <strong>Agregar columna marca + tabla divisiones</strong><br>
+      ALTER TABLE con datos existentes actualizados. Muestra el flujo correcto de evolución de schema.
+    </div>
+  </div>
+  <div class="lt-item">
+    <span class="lt-version">V4</span>
+    <div class="lt-desc">
+      <strong>Constraint CHECK en división + trigger updated_at</strong><br>
+      Integridad en BD independiente de la validación Java. Trigger que mantiene updated_at automáticamente.
+    </div>
+  </div>
+  <div class="lt-item">
+    <span class="lt-version">R__</span>
+    <div class="lt-desc">
+      <strong>Vista inventario (repetible)</strong><br>
+      Vista consolidada con estado de stock calculado. Se recrea automáticamente cuando cambia.
+    </div>
+  </div>
+</div>
+
+<h2>El orden correcto al agregar una columna</h2>
+
+<pre><code>-- PASO 1: crear la migración SQL (V3)
+ALTER TABLE repuestos ADD COLUMN marca VARCHAR(100);
+UPDATE repuestos SET marca = 'Toyota' WHERE codigo = 'EMP-TOYOTA-001';
+-- ... resto de UPDATEs
+ALTER TABLE repuestos ALTER COLUMN marca SET NOT NULL;
+
+// PASO 2: agregar el campo en la entidad Java
+@Column(name = "marca", nullable = false, length = 100)
+private String marca;
+
+// PASO 3: actualizar DTOs, Service (toResponse, toModel)
+
+// PASO 4: deploy — Flyway ejecuta V3 → Hibernate valida → pasa ✓</code></pre>
+
+<div class="peligro">
+  <strong>Nunca hagas esto:</strong><br>
+  Agregar el campo Java <em>antes</em> de crear la migración. Con <code>ddl-auto: validate</code>,
+  Hibernate falla al arrancar porque la columna no existe aún en BD.
+  El orden es siempre: <strong>BD primero, Java después</strong>.
+</div>
+
+<h2>Flyway en el arranque de Spring Boot</h2>
+
+<pre><code># Orden de inicialización de Spring Boot:
+1. Crear DataSource (HikariCP)
+2. Flyway.migrate() ← ejecuta migraciones pendientes
+3. Hibernate valida schema (ddl-auto: validate)
+4. App lista para recibir requests
+
+# Si Flyway falla, la app no arranca — diseño correcto.
+# Mejor fallar rápido que correr con un schema desactualizado.</code></pre>
+
+<h2>Tabla flyway_schema_history</h2>
+
+<pre><code>-- Flyway mantiene su propio registro en la BD
+SELECT * FROM flyway_schema_history ORDER BY installed_rank;
+
+-- Resultado:
+-- version | description               | type | checksum    | success
+-- 1       | crear tabla repuestos     | SQL  | -123456789  | true
+-- 2       | datos iniciales repuestos | SQL  | -987654321  | true
+-- 3       | agregar columna marca     | SQL  |  456789123  | true
+-- 4       | constraint division check | SQL  | -654321987  | true
+-- null    | vista inventario          | SQL  |  789123456  | true  ← R__
+
+-- Ver desde el Actuator
+curl http://localhost:8080/actuator/flyway</code></pre>
+
+<h2>Migraciones en entornos con múltiples instancias</h2>
+
+<div class="aviso">
+  <strong>¿Qué pasa si dos instancias arrancan al mismo tiempo y ambas intentan correr V3?</strong><br><br>
+  Flyway usa un lock distribuido sobre la tabla <code>flyway_schema_history</code>.
+  La primera instancia obtiene el lock, ejecuta la migración y lo libera.
+  La segunda instancia ve que V3 ya fue aplicada y no hace nada.<br><br>
+  Es seguro en Postgres, MySQL y Oracle — todos soportan SELECT FOR UPDATE o LOCK TABLE.
+</div>
+
+<h2>Migraciones repetibles (R__)</h2>
+
+<pre><code>-- R__vista_inventario.sql
+-- Se recrea CADA VEZ que el archivo cambia (checksum diferente)
+CREATE OR REPLACE VIEW vista_inventario AS
+SELECT
+    r.id, r.codigo, r.descripcion, r.marca, r.division,
+    d.nombre        AS nombre_division,
+    r.precio, r.stock,
+    r.precio * r.stock AS valor_inventario,
+    CASE
+        WHEN r.stock = 0  THEN 'AGOTADO'
+        WHEN r.stock < 10 THEN 'BAJO'
+        WHEN r.stock < 50 THEN 'NORMAL'
+        ELSE                   'ALTO'
+    END             AS estado_stock
+FROM repuestos r
+LEFT JOIN divisiones d ON d.codigo = r.division;
+
+-- Para modificar la vista: edita el archivo R__ directamente.
+-- Flyway detecta el cambio de checksum y la recrea.
+-- No necesitas V5, V6, V7... para cada ajuste a la vista.</code></pre>
+
+<h2>Migraciones de tests con H2</h2>
+
+<pre><code># application-test.yml apunta a una carpeta separada:
+flyway:
+  locations: classpath:db/migration/test
+
+# La carpeta test/ tiene versiones simplificadas de V1-V3
+# sin PL/pgSQL ni índices GIN (específicos de Postgres).
+# En SB-11 usamos Testcontainers y esto desaparece:
+# los tests corren contra Postgres real con las mismas migraciones.</code></pre>
+
+<h2>Comandos útiles</h2>
+
+<pre><code># Ver estado de todas las migraciones
+mvn flyway:info
+
+# Forzar re-ejecución de una R__ (cambiar el checksum)
+# Simplemente edita el archivo R__vista_inventario.sql
+
+# Limpiar TODA la BD (solo desarrollo — nunca producción)
+# Requiere flyway.clean-disabled=false en application.yml
+mvn flyway:clean
+
+# Verificar que el schema coincide con las migraciones
+mvn flyway:validate</code></pre>
+
+<h2>Tests de esta sesión</h2>
+
+<table class="tabla">
+  <thead><tr><th>Test</th><th>Qué prueba</th></tr></thead>
+  <tbody>
+    <tr><td>RepuestoRepositoryFlywayTest</td><td>Las migraciones V1+V2+V3 corren en H2 y los datos semilla existen</td></tr>
+    <tr><td>RepuestoServiceTest</td><td>El campo marca se mapea correctamente en toResponse() y toModel()</td></tr>
+    <tr><td>PedidoLegadoRepositoryTest</td><td>Sin cambios — el legado no usa Flyway</td></tr>
+  </tbody>
+</table>
+
+<h2>Ejercicio</h2>
+
+<div class="caja">
+  <ol>
+    <li>Completar los TODOs 1 al 6 en <code>start/</code>.</li>
+    <li>Levantar Postgres: <code>docker compose up -d</code></li>
+    <li>Correr la app y verificar que Flyway ejecuta las 4 migraciones:<br>
+        <code>curl http://localhost:8080/actuator/flyway</code></li>
+    <li>Verificar la tabla en BD:<br>
+        <code>docker exec -it pevisa-postgres psql -U pevisa -d pevisa_db -c "SELECT * FROM flyway_schema_history;"</code></li>
+    <li>Consultar la vista:<br>
+        <code>docker exec -it pevisa-postgres psql -U pevisa -d pevisa_db -c "SELECT * FROM vista_inventario LIMIT 5;"</code></li>
+    <li>Correr tests: <code>mvn test</code> — 21 tests sin Docker.</li>
+    <li><strong>Desafío:</strong> Crear <code>V5__agregar_tabla_categorias.sql</code> con una tabla
+        <code>categorias</code> que agrupe divisiones (ej: MOTOR, ELECTRICO, ACCESORIOS).
+        ¿Qué pasa si intentas modificar V3 en lugar de crear V5?</li>
+  </ol>
+</div>
+
+<h2>Qué viene en SB-05</h2>
+
+<div class="caja">
+  <strong>Redis Cache</strong> — el catálogo de repuestos de PEVISA tiene miles de productos.
+  Cada <code>GET /api/v1/repuestos</code> golpea Postgres. Con <code>@Cacheable</code>
+  la segunda consulta tarda microsegundos en vez de milisegundos,
+  y la BD respira. Veremos TTL, invalidación y caché distribuida entre instancias.
+</div>
+
+</main>
+</body>
+</html>

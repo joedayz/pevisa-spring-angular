@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ExternalStorageConfigurationManager" enabled="true" />
+  <component name="MavenProjectsManager">
+    <option name="originalFiles">
+      <list>
+        <option value="$PROJECT_DIR$/sb-04-flyway/solution/pom.xml" />
+        <option value="$PROJECT_DIR$/sb-01-proyecto-base/start/pom.xml" />
+        <option value="$PROJECT_DIR$/sb-01-proyecto-base/solution/pom.xml" />
+        <option value="$PROJECT_DIR$/sb-02-jpa-spring-data/start/pom.xml" />
+        <option value="$PROJECT_DIR$/sb-02-jpa-spring-data/solution/pom.xml" />
+        <option value="$PROJECT_DIR$/sb-03-spring-jdbc-multidatasource/start/pom.xml" />
+        <option value="$PROJECT_DIR$/sb-03-spring-jdbc-multidatasource/solution/pom.xml" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_25" default="true" project-jdk-name="temurin-25" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/out" />
+  </component>
+</project>
