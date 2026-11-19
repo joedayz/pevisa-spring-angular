@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SB-03 · Spring JDBC + Múltiples Datasources · PEVISA</title>
+<style>
+  :root { --verde:#16342c; --papel:#f6f3ec; --linea:#ddd4c4; --menta:#e7f3ee; --rojo:#c0392b; --azul:#1a5276; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:17px/1.5 "Segoe UI",system-ui,sans-serif; background:var(--papel); color:#14211c; }
+  header { background:var(--verde); color:#f7f4ee; padding:1.6rem 7vw; }
+  header h1 { margin:0; font-size:2rem; }
+  header p  { margin:.3rem 0 0; opacity:.8; }
+  main { padding:1rem 7vw 3rem; max-width:1100px; }
+  h2 { margin-top:2rem; color:var(--verde); border-bottom:2px solid var(--linea); padding-bottom:.3rem; }
+  h3 { margin-top:1.4rem; color:#2c5f52; }
+  pre { background:#14211c; color:#f4f1ea; padding:1rem 1.2rem; border-radius:10px; overflow-x:auto; font-size:.91rem; }
+  code { font-family:ui-monospace,Menlo,Consolas,monospace; }
+  pre code { color:inherit; }
+  .caja   { background:var(--menta); border-radius:10px; padding:.8rem 1.1rem; margin:.8rem 0; }
+  .aviso  { background:#fef9e7; border-left:4px solid #f1c40f; padding:.7rem 1rem; border-radius:6px; margin:.8rem 0; }
+  .peligro{ background:#fdedec; border-left:4px solid var(--rojo); padding:.7rem 1rem; border-radius:6px; margin:.8rem 0; }
+  .tabla  { width:100%; border-collapse:collapse; background:#fff; margin:.8rem 0; }
+  .tabla th,.tabla td { border:1px solid var(--linea); padding:.5rem .8rem; text-align:left; vertical-align:top; }
+  .tabla th { background:var(--verde); color:#fff; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+  @media(max-width:750px){.grid2{grid-template-columns:1fr;}}
+  .flujo { display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; margin:.8rem 0; font-size:.95rem; }
+  .flujo-caja { background:var(--azul); color:#fff; padding:.4rem .9rem; border-radius:8px; }
+  .flujo-verde { background:var(--verde); color:#fff; padding:.4rem .9rem; border-radius:8px; }
+  .flujo-flecha { color:#888; font-size:1.2rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SB-03 · Spring JDBC + Múltiples Datasources</h1>
+  <p>PEVISA Repuestos · Spring Boot 3.3 · Java 21 · Sesión 3 de 15</p>
+</header>
+
+<main>
+
+<h2>El escenario real</h2>
+
+<p>PEVISA tiene un sistema ERP anterior que lleva 15 años registrando pedidos de distribuidores.
+Migrarlo no es una opción a corto plazo. El nuevo backend necesita consultar ese historial
+mientras gestiona el catálogo de repuestos en Postgres.</p>
+
+<div class="flujo">
+  <div class="flujo-verde">App Spring Boot</div>
+  <div class="flujo-flecha">→ JPA</div>
+  <div class="flujo-caja">Postgres principal<br><small>catálogo repuestos</small></div>
+  <div class="flujo-flecha" style="margin-left:1rem">→ JdbcClient</div>
+  <div class="flujo-caja">BD Legada<br><small>historial pedidos</small></div>
+</div>
+
+<div class="caja">
+  <strong>Qué aprenden hoy:</strong>
+  <ul style="margin:.4rem 0">
+    <li>Por qué Spring Boot pierde la auto-configuración con 2+ datasources y cómo recuperarla</li>
+    <li><code>@Primary</code>, <code>@Qualifier</code> y cuándo usar cada uno</li>
+    <li><code>JdbcClient</code> (Spring 6): la evolución de <code>JdbcTemplate</code></li>
+    <li>Cómo llamar procedimientos almacenados con <code>JdbcClient</code></li>
+    <li>Cuándo usar JPA vs JDBC puro — y por qué la respuesta no es "siempre JPA"</li>
+    <li>Separar modelos por datasource: <code>Repuesto</code> (JPA) vs <code>Pedido</code> (JDBC)</li>
+  </ul>
+</div>
+
+<h2>El problema del segundo datasource</h2>
+
+<pre><code>// Con UN datasource, Spring Boot auto-configura todo:
+// - DataSource (HikariCP)
+// - EntityManagerFactory (JPA)
+// - TransactionManager
+// - JdbcTemplate / JdbcClient
+
+// Con DOS datasources, Spring Boot se paraliza:
+// "No qualifying bean of type 'DataSource' — expected single bean
+//  but found 2: principalDataSource, legadoDataSource"
+
+// Solución: tomar el control manualmente en @Configuration</code></pre>
+
+<h2>DataSourceConfig — la clase que lo resuelve todo</h2>
+
+<pre><code>@Configuration
+@EnableTransactionManagement
+@EnableJpaRepositories(
+    basePackages            = "pe.com.pevisa.repuesto.repository.jpa",
+    entityManagerFactoryRef = "principalEntityManagerFactory",
+    transactionManagerRef   = "principalTransactionManager"
+)
+public class DataSourceConfig {
+
+    // ── Datasource principal ──────────────────────────────────────
+    @Bean @Primary
+    @ConfigurationProperties("spring.datasource.hikari")
+    public DataSource principalDataSource(...) { ... }
+
+    @Bean("principalEntityManagerFactory") @Primary
+    public LocalContainerEntityManagerFactoryBean principalEntityManagerFactory(...) {
+        factory.setPackagesToScan("pe.com.pevisa.repuesto.model");
+        // Solo escanea entidades JPA — no Pedido (que no es @Entity)
+        ...
+    }
+
+    @Bean("principalTransactionManager") @Primary
+    public PlatformTransactionManager principalTransactionManager(...) { ... }
+
+    // ── Datasource legado ─────────────────────────────────────────
+    @Bean("legadoDataSource")            // SIN @Primary
+    public DataSource legadoDataSource(...) { ... }
+
+    @Bean("legadoJdbcClient")
+    public JdbcClient legadoJdbcClient(
+            @Qualifier("legadoDataSource") DataSource ds) {
+        return JdbcClient.create(ds);    // un JdbcClient dedicado al legado
+    }
+}</code></pre>
+
+<div class="aviso">
+  <strong>¿Por qué <code>@EnableJpaRepositories</code> aquí?</strong><br>
+  Spring Boot activa JPA automáticamente cuando hay un solo DataSource.
+  Con dos, necesitas decirle explícitamente: "los repositorios en el paquete <code>jpa/</code>
+  usan <em>este</em> EntityManagerFactory y <em>este</em> TransactionManager".
+  <code>PedidoLegadoRepository</code> está en el paquete <code>jdbc/</code> — JPA no lo toca.
+</div>
+
+<h2>JdbcClient — la API moderna de JDBC en Spring 6</h2>
+
+<div class="grid2">
+<div>
+<h3>JdbcTemplate (Spring 1-5)</h3>
+<pre><code>// Verbose: ResultSet manual
+jdbcTemplate.query(
+  "SELECT * FROM pedidos WHERE estado = ?",
+  new Object[]{"PENDIENTE"},
+  (rs, row) -> Pedido.builder()
+    .id(rs.getLong("id"))
+    .numeroPedido(rs.getString("numero_pedido"))
+    .estado(rs.getString("estado"))
+    // ... 6 campos más
+    .build()
+);</code></pre>
+</div>
+<div>
+<h3>JdbcClient (Spring 6)</h3>
+<pre><code>// Fluido: mapeo automático + named params
+jdbc.sql("""
+    SELECT * FROM pedidos
+    WHERE estado = :estado
+    """)
+    .param("estado", "PENDIENTE")
+    .query(Pedido.class)   // mapeo automático
+    .list();</code></pre>
+</div>
+</div>
+
+<table class="tabla">
+  <thead><tr><th>Método terminal</th><th>Cuándo usarlo</th><th>Lanza si…</th></tr></thead>
+  <tbody>
+    <tr><td><code>.list()</code></td><td>0 o más filas</td><td>Nunca</td></tr>
+    <tr><td><code>.optional()</code></td><td>0 o 1 fila</td><td>Más de 1 fila</td></tr>
+    <tr><td><code>.single()</code></td><td>Exactamente 1 fila</td><td>0 o más de 1 fila</td></tr>
+  </tbody>
+</table>
+
+<h2>Procedimiento almacenado</h2>
+
+<pre><code>-- La función en Postgres
+CREATE OR REPLACE FUNCTION resumen_ventas_repuesto(p_codigo VARCHAR)
+RETURNS TABLE (
+    codigo_repuesto VARCHAR,
+    total_unidades  BIGINT,
+    total_ingresos  NUMERIC,
+    num_pedidos     BIGINT
+) AS $$ ... $$ LANGUAGE plpgsql;
+
+// Llamada desde JdbcClient — igual que cualquier SELECT
+public Optional&lt;ResumenVentasResponse&gt; resumenVentas(String codigo) {
+    return jdbc.sql("SELECT * FROM resumen_ventas_repuesto(:codigo)")
+               .param("codigo", codigo)
+               .query(ResumenVentasResponse.class)
+               .optional();
+}
+// JdbcClient mapea cada columna de la función a un campo del DTO.
+// No hay ResultSet, no hay PreparedStatement, no hay CallableStatement.</code></pre>
+
+<div class="aviso">
+  <strong>Oracle / SQL Server:</strong>
+  Para procedimientos con parámetros <code>OUT</code> (patrón clásico de Oracle)
+  usamos <code>SimpleJdbcCall</code>, que es el complemento de JdbcClient para ese caso.
+  <code>JdbcClient</code> cubre el 90% de los casos con funciones que retornan tablas o cursores.
+</div>
+
+<h2>Separación de modelos por datasource</h2>
+
+<pre><code>// Repuesto — entidad JPA, datasource principal
+@Entity @Table(name = "repuestos")
+public class Repuesto { ... }
+
+// Pedido — POJO, datasource legado, NO es @Entity
+@Data @Builder
+public class Pedido {
+    private String numeroPedido;
+    private String codigoRepuesto;
+    // JdbcClient lo popula directamente desde el ResultSet
+}</code></pre>
+
+<div class="peligro">
+  <strong>Error común: mezclar @Entity con objetos JDBC.</strong><br>
+  Si anotas <code>Pedido</code> con <code>@Entity</code>, Hibernate intentará crear
+  la tabla <code>pedidos</code> en el datasource principal — y fallará porque
+  ese schema no existe ahí, o peor, creará una tabla vacía que confunde al equipo.
+</div>
+
+<h2>Cuándo usar JPA vs JdbcClient</h2>
+
+<table class="tabla">
+  <thead><tr><th></th><th>JPA / Hibernate</th><th>JdbcClient</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Mejor para</strong></td><td>Entidades con ciclo de vida, relaciones, caché</td><td>Consultas complejas, BD legadas, proyecciones, batch</td></tr>
+    <tr><td><strong>Control SQL</strong></td><td>Generado por Hibernate (puede sorprender)</td><td>Total — el SQL es exactamente lo que escribes</td></tr>
+    <tr><td><strong>Schema</strong></td><td>Lo controlas tú (Flyway en SB-04)</td><td>Ya existe, no lo gestionas</td></tr>
+    <tr><td><strong>Rendimiento</strong></td><td>Puede tener N+1 y flush inesperado</td><td>Predecible — una query, un resultado</td></tr>
+    <tr><td><strong>Transacciones</strong></td><td>@Transactional con JpaTransactionManager</td><td>@Transactional con DataSourceTransactionManager</td></tr>
+  </tbody>
+</table>
+
+<h2>Nuevos endpoints</h2>
+
+<pre><code># Todos los pedidos del legado
+GET /api/v1/pedidos
+
+# Pedido por número
+GET /api/v1/pedidos/PED-2024-0001
+
+# Filtrar por estado
+GET /api/v1/pedidos?estado=PENDIENTE
+
+# Pedidos de un repuesto específico
+GET /api/v1/pedidos/repuesto/EMP-TOYOTA-001
+
+# Resumen de ventas (llama al procedimiento almacenado)
+GET /api/v1/pedidos/repuesto/EMP-TOYOTA-001/resumen</code></pre>
+
+<pre><code># Respuesta del resumen
+{
+  "codigoRepuesto": "EMP-TOYOTA-001",
+  "totalUnidades": 30,
+  "totalIngresos": 5550.00,
+  "numPedidos": 2
+}</code></pre>
+
+<h2>Tests de esta sesión</h2>
+
+<table class="tabla">
+  <thead><tr><th>Test</th><th>Anotación</th><th>Qué prueba</th></tr></thead>
+  <tbody>
+    <tr><td>PedidoLegadoRepositoryTest</td><td><code>@JdbcTest</code></td><td>Queries JdbcClient contra H2</td></tr>
+    <tr><td>PedidoServiceTest</td><td><code>@ExtendWith(MockitoExtension)</code></td><td>Lógica del service, mock del repositorio</td></tr>
+    <tr><td>PedidoControllerTest</td><td><code>@WebMvcTest</code></td><td>Endpoints nuevos: listar, buscar, resumen</td></tr>
+  </tbody>
+</table>
+
+<h2>Ejercicio</h2>
+
+<div class="caja">
+  <ol>
+    <li>Completar los TODOs 1 al 17 en el <code>start/</code>.</li>
+    <li>Levantar ambos contenedores: <code>docker compose up -d</code></li>
+    <li>Verificar que los datos del legado están listos:<br>
+        <code>docker exec -it pevisa-postgres-legado psql -U legado -d pevisa_legado -c "SELECT * FROM pedidos;"</code></li>
+    <li>Probar el resumen de ventas:<br>
+        <code>curl http://localhost:8080/api/v1/pedidos/repuesto/EMP-TOYOTA-001/resumen</code></li>
+    <li>Correr tests: <code>mvn test</code> (13 tests, sin Docker)</li>
+    <li><strong>Desafío:</strong> Agregar un endpoint <code>GET /api/v1/pedidos/distribuidor/{nombre}</code>
+        que llame a <code>findByDistribuidorYEstado()</code> con estado=ENTREGADO.</li>
+  </ol>
+</div>
+
+<h2>Qué viene en SB-04</h2>
+
+<div class="caja">
+  <strong>Flyway — migraciones de base de datos.</strong>
+  Hoy usamos <code>ddl-auto: create-drop</code> que destruye datos al reiniciar.
+  En SB-04 cambiamos eso por migraciones versionadas: el schema evoluciona
+  de forma controlada, auditada y reversible — igual que el código con Git.
+</div>
+
+</main>
+</body>
+</html>
