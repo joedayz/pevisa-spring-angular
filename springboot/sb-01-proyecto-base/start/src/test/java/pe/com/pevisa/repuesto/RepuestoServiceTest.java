@@ -17,6 +17,7 @@ import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -51,5 +52,16 @@ public class RepuestoServiceTest {
         RepuestoResponse repuesta = servicio.buscarPorId(1L); // internamente llama al repositorio.findById(1L)
 
         assertThat(repuesta.codigo()).isEqualTo("EMP-TOYOTA-001");
+    }
+
+
+    @Test
+    @DisplayName("buscarPorId lanza excepcion cuando no existe")
+    void buscarPorId_noExistente(){
+        when(repositorio.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> servicio.buscarPorId(99L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("99");
     }
 }
