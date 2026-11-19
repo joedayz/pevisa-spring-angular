@@ -1,0 +1,107 @@
+# ══════════════════════════════════════════════════════════════
+# PEVISA Spring Boot + Angular — .gitignore
+# ══════════════════════════════════════════════════════════════
+
+# ── Maven ──────────────────────────────────────────────────────
+target/
+*.jar
+*.war
+*.ear
+*.class
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# ── Gradle (por si acaso) ──────────────────────────────────────
+.gradle/
+build/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
+# ── Node / Angular ─────────────────────────────────────────────
+node_modules/
+dist/
+.angular/cache/
+npm-debug.log*
+yarn-error.log*
+.pnp
+.pnp.js
+
+# ── IDEs ───────────────────────────────────────────────────────
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Eclipse
+.classpath
+.project
+.settings/
+.factorypath
+
+# NetBeans
+nbproject/
+nbbuild/
+nbdist/
+.nb-gradle/
+
+# ── Logs ───────────────────────────────────────────────────────
+*.log
+logs/
+log/
+
+# ── OS ─────────────────────────────────────────────────────────
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# ── Variables de entorno y secretos ───────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+secrets/
+
+# ── Docker ────────────────────────────────────────────────────
+# No ignorar docker-compose.yml ni Dockerfile — son parte del curso
+# Sí ignorar datos persistentes si se montan localmente
+pgdata/
+redis-data/
+kafka-data/
+
+# ── Misc ──────────────────────────────────────────────────────
+*.tmp
+*.bak
+*.swp
+*.orig
+HELP.md

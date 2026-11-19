@@ -1,5 +1,0 @@
-pe/com/pevisa/repuesto/service/RepuestoServiceTest.class
-pe/com/pevisa/repuesto/controller/PedidoControllerTest.class
-pe/com/pevisa/repuesto/repository/PedidoLegadoRepositoryTest.class
-pe/com/pevisa/repuesto/repository/RepuestoRepositoryFlywayTest.class
-pe/com/pevisa/repuesto/service/PedidoServiceTest.class
