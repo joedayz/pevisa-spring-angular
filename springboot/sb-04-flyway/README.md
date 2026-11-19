@@ -1,6 +1,6 @@
 # SB-04 · Migraciones de BD con Flyway
 
-**PEVISA Repuestos** · Spring Boot 3.3 · Java 21
+**PEVISA Repuestos** · Spring Boot 4.1.2 · Java 25
 
 ## Qué aprenden en esta sesión
 
@@ -25,7 +25,7 @@
 
 ## Requisitos
 
-- Java 21
+- **Java 25**
 - Docker Desktop
 
 ## Levantar
@@ -41,7 +41,7 @@ cd solution && mvn spring-boot:run
 curl http://localhost:8080/actuator/flyway
 ```
 
-## Tests (21 — sin Docker)
+## Tests (sin Docker)
 
 ```bash
 mvn test

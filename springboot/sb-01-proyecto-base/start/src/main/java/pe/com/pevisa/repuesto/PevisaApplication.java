@@ -2,11 +2,26 @@ package pe.com.pevisa.repuesto;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import pe.com.pevisa.repuesto.model.Repuesto;
+
+
+/**
+ * Punto de entrada de la aplicación PEVISA Repuestos.
+ *
+ * @SpringBootApplication equivale a:
+ *   @Configuration          → esta clase puede declarar beans
+ *   @EnableAutoConfiguration → Spring Boot configura lo que detecta en el classpath
+ *   @ComponentScan          → escanea todos los @Component/@Service/@Repository/@Controller/@RestController
+ *                             bajo este paquete y sus subpaquetes
+ */
+
 
 @SpringBootApplication
 public class PevisaApplication {
 
     public static void main(String[] args) {
-        // TODO: arrancar la aplicación con SpringApplication.run(...)
+       SpringApplication.run(PevisaApplication.class, args);
+
+
     }
 }

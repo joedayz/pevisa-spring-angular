@@ -1,6 +1,6 @@
 # SB-02 · JPA + Spring Data
 
-**PEVISA Repuestos** · Spring Boot 3.3 · Java 21
+**PEVISA Repuestos** · Spring Boot 4.1.2 · Java 25
 
 ## Qué aprenden en esta sesión
 
@@ -20,8 +20,8 @@
 
 ## Requisitos
 
-- **Java 21** (Lombok no es compatible con Java 22+)
-- Docker Desktop corriendo
+- **Java 25**
+- Docker Desktop
 
 ## Levantar infraestructura
 
@@ -42,7 +42,6 @@ mvn spring-boot:run
 
 ```bash
 mvn test
-# 16 tests, 0 fallos — usan H2 en memoria
 ```
 
 ## Endpoints nuevos en SB-02

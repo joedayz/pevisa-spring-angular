@@ -1,6 +1,6 @@
 # SB-01 · Proyecto base y arquitectura en capas
 
-**PEVISA Repuestos** · Spring Boot 3.3 · Java 21
+**PEVISA Repuestos** · Spring Boot 4.1.2 · Java 25
 
 ## Qué aprenden en esta sesión
 
@@ -22,16 +22,8 @@ sb-01-proyecto-base/
 
 ## Requisitos
 
-- **Java 21** (Lombok no es compatible con Java 22+)
+- **Java 25**
 - Maven 3.9+
-
-Si tienes múltiples JDKs (sdkman, etc.), apunta a Java 21 antes de correr:
-
-```bash
-export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home
-# o en Linux/sdkman:
-sdk use java 21.0.6-oracle
-```
 
 ## Correr
 

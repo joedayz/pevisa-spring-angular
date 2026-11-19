@@ -1,13 +1,13 @@
 # SB-03 · Spring JDBC + Múltiples Datasources
 
-**PEVISA Repuestos** · Spring Boot 3.3 · Java 21
+**PEVISA Repuestos** · Spring Boot 4.1.2 · Java 25
 
 ## Qué aprenden en esta sesión
 
 - Por qué Spring Boot pierde la auto-configuración con 2+ datasources
 - `@Primary` y `@Qualifier` para resolver ambigüedad de beans
 - `@EnableJpaRepositories` con `entityManagerFactoryRef` explícito
-- `JdbcClient` (Spring 6): API fluida, named params, mapeo automático
+- `JdbcClient` (Spring 7): API fluida, named params, mapeo automático
 - Cuándo usar `.list()` vs `.optional()` vs `.single()`
 - Llamar procedimientos almacenados con `JdbcClient`
 - Separar modelos por datasource: `Repuesto` (`@Entity`) vs `Pedido` (POJO)
@@ -29,7 +29,7 @@ App Spring Boot
 
 ## Requisitos
 
-- Java 21
+- **Java 25**
 - Docker Desktop
 
 ## Levantar infraestructura
