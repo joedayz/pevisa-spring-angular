@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: pe.com.pevisa.repuesto.controller.RepuestoControllerTest
+-------------------------------------------------------------------------------
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.539 s -- in pe.com.pevisa.repuesto.controller.RepuestoControllerTest

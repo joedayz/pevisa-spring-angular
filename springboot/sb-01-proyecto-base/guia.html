@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SB-01 · Proyecto base y arquitectura en capas · PEVISA</title>
+<style>
+  :root {
+    --verde: #16342c;
+    --papel: #f6f3ec;
+    --linea: #ddd4c4;
+    --menta: #e7f3ee;
+    --rojo:  #c0392b;
+    --azul:  #1a5276;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 17px/1.5 "Segoe UI", system-ui, sans-serif; background: var(--papel); color: #14211c; }
+  header { background: var(--verde); color: #f7f4ee; padding: 1.6rem 7vw; }
+  header h1 { margin: 0; font-size: 2rem; }
+  header p  { margin: 0.3rem 0 0; opacity: .8; font-size: 1rem; }
+  main { padding: 1rem 7vw 3rem; max-width: 1100px; }
+  h2 { margin-top: 2rem; color: var(--verde); border-bottom: 2px solid var(--linea); padding-bottom: .3rem; }
+  h3 { margin-top: 1.4rem; color: #2c5f52; }
+  pre { background: #14211c; color: #f4f1ea; padding: 1rem 1.2rem; border-radius: 10px; overflow-x: auto; font-size: .92rem; }
+  code { font-family: ui-monospace, Menlo, Consolas, monospace; }
+  pre code { color: inherit; }
+  .chip { display: inline-block; background: var(--verde); color: #fff; border-radius: 20px; padding: .15rem .7rem; font-size: .8rem; margin-right: .3rem; }
+  .caja { background: var(--menta); border-radius: 10px; padding: .8rem 1.1rem; margin: .8rem 0; }
+  .aviso { background: #fef9e7; border-left: 4px solid #f1c40f; padding: .7rem 1rem; border-radius: 6px; margin: .8rem 0; }
+  .tabla { width: 100%; border-collapse: collapse; background: #fff; margin: .8rem 0; }
+  .tabla th, .tabla td { border: 1px solid var(--linea); padding: .5rem .8rem; text-align: left; vertical-align: top; }
+  .tabla th { background: var(--verde); color: #fff; }
+  .flujo { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin: .8rem 0; }
+  .flujo-caja { background: var(--azul); color: #fff; padding: .4rem .9rem; border-radius: 8px; font-size: .9rem; }
+  .flujo-flecha { color: #888; font-size: 1.2rem; }
+  a { color: #0f6e56; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 750px) { .grid2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SB-01 · Proyecto base y arquitectura en capas</h1>
+  <p>PEVISA Repuestos · Spring Boot 3.3 · Java 21 · Sesión 1 de 15</p>
+</header>
+
+<main>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2>¿Qué construimos hoy?</h2>
+
+<p>Arrancamos el backend de PEVISA desde cero. Al final de la sesión
+tendrán un API REST completamente funcional para el catálogo de repuestos,
+con la estructura de paquetes que usarán en <strong>todas las sesiones siguientes</strong>.
+Cada sesión agrega una capa real encima de lo que hoy construyen.</p>
+
+<div class="caja">
+  <strong>Dominio:</strong> PEVISA es líder en autopartes en Perú, con más de 50 años en el mercado
+  y presencia en 30+ países. Su catálogo maneja divisiones como
+  EMPAQUETADURAS, BOSCH, BATERIAS, DENSO. Ese será nuestro modelo de datos durante todo el curso.
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2>Arquitectura en capas</h2>
+
+<p>Spring Boot impone una separación de responsabilidades en 4 capas.
+Cada una tiene una sola razón para cambiar:</p>
+
+<div class="flujo">
+  <div class="flujo-caja">HTTP / JSON</div>
+  <div class="flujo-flecha">→</div>
+  <div class="flujo-caja">Controller</div>
+  <div class="flujo-flecha">→</div>
+  <div class="flujo-caja">Service</div>
+  <div class="flujo-flecha">→</div>
+  <div class="flujo-caja">Repository</div>
+  <div class="flujo-flecha">→</div>
+  <div class="flujo-caja">BD / Memoria</div>
+</div>
+
+<table class="tabla">
+  <thead><tr><th>Capa</th><th>Responsabilidad</th><th>No debe</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>@RestController</code></td>
+      <td>Parsear HTTP, validar entrada, delegar al service, construir respuesta HTTP</td>
+      <td>Contener lógica de negocio ni acceder a datos</td>
+    </tr>
+    <tr>
+      <td><code>@Service</code></td>
+      <td>Lógica de negocio, orquestar repositorios, lanzar excepciones de dominio</td>
+      <td>Saber nada de HTTP ni de SQL</td>
+    </tr>
+    <tr>
+      <td><code>@Repository</code></td>
+      <td>Acceso a datos (hoy en memoria, en SB-02 con JPA)</td>
+      <td>Contener reglas de negocio</td>
+    </tr>
+    <tr>
+      <td>Model / DTO</td>
+      <td>Representar datos del dominio y contratos de la API</td>
+      <td>Mezclar lógica de negocio con serialización HTTP</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2>Estructura de paquetes</h2>
+
+<pre><code>pe.com.pevisa.repuesto/
+├── PevisaApplication.java       ← @SpringBootApplication
+├── controller/
+│   └── RepuestoController.java  ← @RestController
+├── service/
+│   └── RepuestoService.java     ← @Service
+├── repository/
+│   ├── RepuestoRepository.java       ← interfaz
+│   └── InMemoryRepuestoRepository.java ← implementación en memoria
+├── model/
+│   └── Repuesto.java            ← modelo de dominio
+├── dto/
+│   ├── RepuestoRequest.java     ← lo que recibe la API
+│   └── RepuestoResponse.java    ← lo que devuelve la API
+└── exception/
+    ├── RepuestoNotFoundException.java
+    └── GlobalExceptionHandler.java  ← @RestControllerAdvice</code></pre>
+
+<div class="aviso">
+  <strong>¿Por qué interfaz en el Repository?</strong><br>
+  Hoy la implementación es en memoria. En SB-02 la reemplazamos por JPA.
+  El Service habla con la <em>interfaz</em>, nunca con la implementación concreta —
+  así el cambio en SB-02 no toca una sola línea del Service.
+  Este principio se llama <strong>Dependency Inversion</strong> (la D de SOLID).
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2>¿Por qué DTOs separados del modelo?</h2>
+
+<div class="grid2">
+  <div>
+    <h3>❌ Sin DTOs</h3>
+    <pre><code>// El model expone campos internos
+// que el cliente no debería ver:
+// id autogenerado, fechas de auditoría,
+// relaciones lazy que estallan,
+// campos de seguridad como password...
+@GetMapping
+public Repuesto listar() { ... }</code></pre>
+  </div>
+  <div>
+    <h3>✅ Con DTOs</h3>
+    <pre><code>// Request: solo lo que el cliente envía
+// Response: solo lo que el cliente necesita
+// + campos calculados (estadoStock)
+// + control total del contrato de la API
+@GetMapping
+public RepuestoResponse listar() { ... }</code></pre>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2>Endpoints del API</h2>
+
+<table class="tabla">
+  <thead><tr><th>Método</th><th>URL</th><th>Descripción</th><th>Respuesta</th></tr></thead>
+  <tbody>
+    <tr><td>GET</td><td>/api/v1/repuestos</td><td>Listar todos</td><td>200 + array</td></tr>
+    <tr><td>GET</td><td>/api/v1/repuestos?division=BOSCH</td><td>Filtrar por división</td><td>200 + array</td></tr>
+    <tr><td>GET</td><td>/api/v1/repuestos/{id}</td><td>Buscar por id</td><td>200 o 404</td></tr>
+    <tr><td>POST</td><td>/api/v1/repuestos</td><td>Crear repuesto</td><td>201 + recurso</td></tr>
+    <tr><td>PUT</td><td>/api/v1/repuestos/{id}</td><td>Actualizar completo</td><td>200 + recurso</td></tr>
+    <tr><td>DELETE</td><td>/api/v1/repuestos/{id}</td><td>Eliminar</td><td>204 sin body</td></tr>
+  </tbody>
+</table>
+
+<pre><code># Crear un repuesto
+curl -X POST http://localhost:8080/api/v1/repuestos \
+  -H "Content-Type: application/json" \
+  -d '{
+    "codigo": "EMP-HONDA-005",
+    "descripcion": "Empaquetadura Honda Civic 1.5T",
+    "division": "EMPAQUETADURAS",
+    "precio": 210.00,
+    "stock": 25
+  }'
+
+# Respuesta 201
+{
+  "id": 5,
+  "codigo": "EMP-HONDA-005",
+  "descripcion": "Empaquetadura Honda Civic 1.5T",
+  "division": "EMPAQUETADURAS",
+  "precio": 210.00,
+  "stock": 25,
+  "estadoStock": "NORMAL"
+}</code></pre>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2>Manejo de errores con RFC 7807</h2>
+
+<p>Usamos <code>ProblemDetail</code> (nativo en Spring 6) en lugar de inventar
+nuestro propio formato. Es el estándar de la industria para errores de API REST.</p>
+
+<div class="grid2">
+  <div>
+    <h3>404 — No encontrado</h3>
+    <pre><code>{
+  "type": "https://pevisa.com.pe/errores/
+           repuesto-no-encontrado",
+  "title": "Repuesto no encontrado",
+  "status": 404,
+  "detail": "No se encontró el
+             repuesto con id: 99"
+}</code></pre>
+  </div>
+  <div>
+    <h3>400 — Validación</h3>
+    <pre><code>{
+  "type": "https://pevisa.com.pe/errores/
+           validacion",
+  "title": "Error de validación",
+  "status": 400,
+  "detail": "codigo: El código es obligatorio,
+             precio: debe ser mayor a cero"
+}</code></pre>
+  </div>
+</div>
+
+<div class="aviso">
+  <strong>Nota sobre AOP:</strong><br>
+  <code>@RestControllerAdvice</code> usa el mismo mecanismo que AOP (proxies dinámicos)
+  para interceptar excepciones de cualquier controller sin que el controller lo sepa.
+  En <strong>SB-10 (Auditoría)</strong> haremos AOP explícitamente: crearemos aspectos
+  que interceptan llamadas al Service para registrar quién hizo qué y cuándo,
+  sin modificar ningún método del Service.
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2>Validación con Bean Validation</h2>
+
+<pre><code>// En el DTO
+@NotBlank(message = "El código es obligatorio")
+@Size(max = 50)
+private String codigo;
+
+@DecimalMin(value = "0.01", message = "El precio debe ser mayor a cero")
+private BigDecimal precio;
+
+// En el Controller: @Valid activa la validación
+@PostMapping
+@ResponseStatus(HttpStatus.CREATED)
+public RepuestoResponse crear(@Valid @RequestBody RepuestoRequest request) {
+    return servicio.crear(request);
+    // Si falla la validación, Spring lanza MethodArgumentNotValidException
+    // que nuestro GlobalExceptionHandler convierte en 400
+}</code></pre>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2>¿Qué viene en las próximas sesiones?</h2>
+
+<table class="tabla">
+  <thead><tr><th>Sesión</th><th>Qué cambia de hoy</th></tr></thead>
+  <tbody>
+    <tr><td>SB-02 · JPA</td><td><code>InMemoryRepuestoRepository</code> desaparece. <code>Repuesto</code> se anota con <code>@Entity</code>. <code>RepuestoRepository</code> extiende <code>JpaRepository</code>. El Service no cambia.</td></tr>
+    <tr><td>SB-04 · Flyway</td><td>El esquema de BD se crea con migraciones versionadas, no con <code>ddl-auto=create</code>.</td></tr>
+    <tr><td>SB-05 · Redis</td><td><code>listar()</code> y <code>buscarPorId()</code> del Service se anotan con <code>@Cacheable</code>. La lógica no cambia.</td></tr>
+    <tr><td>SB-06 · OpenAPI</td><td><code>toResponse()</code> y <code>toModel()</code> se reemplazan con MapStruct.</td></tr>
+    <tr><td>SB-07 · Errores</td><td>El <code>GlobalExceptionHandler</code> de hoy crece con todos los casos de error del negocio.</td></tr>
+    <tr><td>SB-10 · Auditoría</td><td>AOP intercepta <code>crear()</code> y <code>actualizar()</code> para guardar quién hizo el cambio.</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2>Ejercicio de la sesión</h2>
+
+<div class="caja">
+  <strong>El grupo agrega la división CONTINENTAL al catálogo:</strong>
+  <ol>
+    <li>Abrir <code>start/</code> y completar los TODOs del 1 al 28.</li>
+    <li>Pre-cargar al menos un repuesto de la división CONTINENTAL en el repositorio.</li>
+    <li>Verificar con <code>curl</code> o Postman:
+      <ul>
+        <li><code>GET /api/v1/repuestos?division=CONTINENTAL</code> devuelve el repuesto.</li>
+        <li><code>POST</code> con precio negativo devuelve 400 con detalle de validación.</li>
+        <li><code>GET /api/v1/repuestos/999</code> devuelve 404 con ProblemDetail.</li>
+      </ul>
+    </li>
+    <li>Correr los tests: <code>mvn test</code></li>
+  </ol>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2>Correr el proyecto</h2>
+
+<pre><code># Desde la carpeta solution/ o start/
+mvn spring-boot:run
+
+# Verificar que levantó
+curl http://localhost:8080/actuator/health
+# {"status":"UP"}
+
+curl http://localhost:8080/actuator/info
+# {"app":{"name":"PEVISA Repuestos API","version":"1.0.0",...}}
+
+# Listar repuestos precargados
+curl http://localhost:8080/api/v1/repuestos</code></pre>
+
+</main>
+</body>
+</html>

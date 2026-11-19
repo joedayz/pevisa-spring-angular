@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SB-02 · JPA + Spring Data · PEVISA</title>
+<style>
+  :root { --verde:#16342c; --papel:#f6f3ec; --linea:#ddd4c4; --menta:#e7f3ee; --rojo:#c0392b; --azul:#1a5276; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:17px/1.5 "Segoe UI",system-ui,sans-serif; background:var(--papel); color:#14211c; }
+  header { background:var(--verde); color:#f7f4ee; padding:1.6rem 7vw; }
+  header h1 { margin:0; font-size:2rem; }
+  header p  { margin:.3rem 0 0; opacity:.8; font-size:1rem; }
+  main { padding:1rem 7vw 3rem; max-width:1100px; }
+  h2 { margin-top:2rem; color:var(--verde); border-bottom:2px solid var(--linea); padding-bottom:.3rem; }
+  h3 { margin-top:1.4rem; color:#2c5f52; }
+  pre { background:#14211c; color:#f4f1ea; padding:1rem 1.2rem; border-radius:10px; overflow-x:auto; font-size:.92rem; }
+  code { font-family:ui-monospace,Menlo,Consolas,monospace; }
+  pre code { color:inherit; }
+  .caja  { background:var(--menta); border-radius:10px; padding:.8rem 1.1rem; margin:.8rem 0; }
+  .aviso { background:#fef9e7; border-left:4px solid #f1c40f; padding:.7rem 1rem; border-radius:6px; margin:.8rem 0; }
+  .peligro { background:#fdedec; border-left:4px solid var(--rojo); padding:.7rem 1rem; border-radius:6px; margin:.8rem 0; }
+  .tabla { width:100%; border-collapse:collapse; background:#fff; margin:.8rem 0; }
+  .tabla th,.tabla td { border:1px solid var(--linea); padding:.5rem .8rem; text-align:left; vertical-align:top; }
+  .tabla th { background:var(--verde); color:#fff; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+  @media(max-width:750px){.grid2{grid-template-columns:1fr;}}
+  .badge { display:inline-block; padding:.1rem .6rem; border-radius:20px; font-size:.8rem; font-weight:bold; }
+  .badge-nuevo { background:#d4efdf; color:#1e8449; }
+  .badge-igual { background:#d6eaf8; color:#1a5276; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SB-02 · JPA + Spring Data</h1>
+  <p>PEVISA Repuestos · Spring Boot 3.3 · Java 21 · Sesión 2 de 15</p>
+</header>
+
+<main>
+
+<h2>El momento de verdad de SB-01</h2>
+
+<p>En SB-01 dijimos: <em>"definimos la interfaz para poder cambiar la implementación sin tocar el Service"</em>.
+Hoy lo comprobamos. <code>InMemoryRepuestoRepository</code> desaparece.
+<code>RepuestoRepository</code> extiende <code>JpaRepository</code>.
+<strong>El Service no cambió ni una línea en su firma pública.</strong>
+El Controller tampoco.</p>
+
+<div class="caja">
+  <strong>Qué cambia hoy:</strong>
+  <ul style="margin:.4rem 0">
+    <li><code>Repuesto</code> se anota con <code>@Entity</code> → Hibernate la mapea a la tabla <code>repuestos</code></li>
+    <li><code>RepuestoRepository</code> extiende <code>JpaRepository</code> → Spring Data genera toda la implementación</li>
+    <li><code>InMemoryRepuestoRepository</code> se elimina completamente</li>
+    <li>El Service agrega <code>@Transactional</code> ahora que hay una BD real</li>
+    <li>Tres endpoints nuevos: <code>/paginado</code>, <code>/stock-bajo</code>, <code>/buscar</code></li>
+  </ul>
+  <strong>Qué NO cambia:</strong> la firma de los métodos del Service ni del Controller existentes.
+</div>
+
+<h2>De memoria a Postgres: infraestructura</h2>
+
+<pre><code># Levantar Postgres con Docker Compose
+docker compose up -d
+
+# Verificar que está listo
+docker compose ps
+# Estado esperado: healthy
+
+# Conectarse directamente (opcional)
+docker exec -it pevisa-postgres psql -U pevisa -d pevisa_db</code></pre>
+
+<div class="aviso">
+  <strong>¿Por qué <code>ddl-auto: create-drop</code> hoy?</strong><br>
+  Hibernate crea las tablas al arrancar y las elimina al cerrar.
+  Cómodo para desarrollo — nunca para producción.<br>
+  En <strong>SB-04 (Flyway)</strong> cambiamos esto a <code>validate</code> y el esquema
+  lo controla Flyway con migraciones versionadas. Nunca más un <code>create-drop</code>
+  que borra datos en producción por accidente.
+</div>
+
+<h2>La entidad JPA</h2>
+
+<div class="grid2">
+<div>
+<h3>SB-01 — modelo en memoria</h3>
+<pre><code>@Data @Builder
+@NoArgsConstructor @AllArgsConstructor
+public class Repuesto {
+
+    private Long id;
+    private String codigo;
+    private String descripcion;
+    private String division;
+    private BigDecimal precio;
+    private Integer stock;
+}</code></pre>
+</div>
+<div>
+<h3>SB-02 — entidad JPA <span class="badge badge-nuevo">nuevo</span></h3>
+<pre><code>@Entity
+@Table(name = "repuestos")
+@Data @Builder
+@NoArgsConstructor @AllArgsConstructor
+public class Repuesto {
+
+    @Id
+    @GeneratedValue(strategy = IDENTITY)
+    private Long id;
+
+    @Column(nullable=false, unique=true, length=50)
+    private String codigo;
+
+    @Column(nullable=false, length=200)
+    private String descripcion;
+
+    @Column(nullable=false, length=50)
+    private String division;
+
+    @Column(nullable=false, precision=12, scale=2)
+    private BigDecimal precio;
+
+    @Column(nullable=false)
+    private Integer stock;
+
+    @Column(nullable=false, updatable=false)
+    private LocalDateTime createdAt;
+
+    @Column
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    void antesDeInsertar() {
+        createdAt = updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    void antesDeActualizar() {
+        updatedAt = LocalDateTime.now();
+    }
+}</code></pre>
+</div>
+</div>
+
+<h2>El repositorio: Spring Data hace el trabajo</h2>
+
+<pre><code>public interface RepuestoRepository extends JpaRepository&lt;Repuesto, Long&gt; {
+
+    // ── Consultas derivadas ──────────────────────────────────────────────
+    // Spring Data lee el nombre y genera el SQL. No hay implementación.
+
+    Optional&lt;Repuesto&gt; findByCodigo(String codigo);
+    // → SELECT * FROM repuestos WHERE codigo = ?
+
+    List&lt;Repuesto&gt; findByDivisionIgnoreCase(String division);
+    // → SELECT * FROM repuestos WHERE LOWER(division) = LOWER(?)
+
+    boolean existsByCodigo(String codigo);
+    // → SELECT COUNT(*) > 0 FROM repuestos WHERE codigo = ?
+    // Más eficiente que findByCodigo: no trae el objeto completo.
+
+    // ── Paginación ───────────────────────────────────────────────────────
+    Page&lt;Repuesto&gt; findAll(Pageable pageable);  // heredado de JpaRepository
+
+    // ── JPQL (@Query) ────────────────────────────────────────────────────
+    @Query("SELECT r FROM Repuesto r WHERE r.stock &lt; :umbral ORDER BY r.stock ASC")
+    List&lt;Repuesto&gt; findRepuestosConStockBajo(@Param("umbral") int umbral);
+
+    @Query("SELECT r FROM Repuesto r WHERE LOWER(r.descripcion) LIKE LOWER(CONCAT('%',:termino,'%'))")
+    List&lt;Repuesto&gt; buscarEnDescripcion(@Param("termino") String termino);
+
+    @Query("SELECT SUM(r.precio * r.stock) FROM Repuesto r WHERE r.division = :division")
+    BigDecimal calcularValorInventarioPorDivision(@Param("division") String division);
+}</code></pre>
+
+<div class="aviso">
+  <strong>JPQL vs SQL nativo:</strong>
+  JPQL opera sobre <em>entidades</em> (<code>Repuesto</code>), no sobre tablas.
+  Hibernate lo traduce al dialecto correcto (Postgres, Oracle, H2…).
+  Usa <code>nativeQuery = true</code> solo cuando necesites funciones específicas
+  de la BD (Postgres JSONB, full-text, funciones de ventana, etc.).
+</div>
+
+<h2>@Transactional — ahora sí importa</h2>
+
+<pre><code>// A nivel de clase: todas las operaciones son readOnly por defecto.
+// Hibernate no rastrea cambios → más rápido y menos memoria.
+@Transactional(readOnly = true)
+public class RepuestoService {
+
+    // Sobreescribe readOnly para los métodos que escriben en BD.
+    // Si lanza RuntimeException → rollback automático. Todo o nada.
+    @Transactional
+    public RepuestoResponse crear(RepuestoRequest request) { ... }
+
+    @Transactional
+    public RepuestoResponse actualizar(Long id, RepuestoRequest request) { ... }
+
+    @Transactional
+    public void eliminar(Long id) { ... }
+}</code></pre>
+
+<div class="peligro">
+  <strong>Error común: @Transactional en métodos privados no funciona.</strong><br>
+  Spring crea un proxy alrededor del Service. Las llamadas externas al proxy
+  activan la transacción. Las llamadas internas (this.otroMetodo()) la ignoran.<br>
+  Regla: <code>@Transactional</code> solo en métodos <code>public</code> llamados desde fuera de la clase.
+</div>
+
+<h2>Paginación</h2>
+
+<pre><code>// Service
+public PageResponse&lt;RepuestoResponse&gt; listarPaginado(int pagina, int tamano, String ordenarPor) {
+    PageRequest pageRequest = PageRequest.of(pagina, tamano, Sort.by(ordenarPor));
+    Page&lt;Repuesto&gt; page = repositorio.findAll(pageRequest);
+
+    return PageResponse.&lt;RepuestoResponse&gt;builder()
+        .contenido(page.getContent().stream().map(this::toResponse).toList())
+        .paginaActual(page.getNumber())
+        .totalPaginas(page.getTotalPages())
+        .totalElementos(page.getTotalElements())
+        .tamanioPagina(page.getSize())
+        .ultima(page.isLast())
+        .build();
+}
+
+// Controller
+@GetMapping("/paginado")
+public PageResponse&lt;RepuestoResponse&gt; listarPaginado(
+        @RequestParam(defaultValue = "0")     int pagina,
+        @RequestParam(defaultValue = "10")    int tamano,
+        @RequestParam(defaultValue = "codigo") String ordenarPor) {
+    return servicio.listarPaginado(pagina, tamano, ordenarPor);
+}</code></pre>
+
+<pre><code># Probarlo
+curl "http://localhost:8080/api/v1/repuestos/paginado?pagina=0&tamano=2&ordenarPor=precio"
+
+# Respuesta
+{
+  "contenido": [...],
+  "paginaActual": 0,
+  "totalPaginas": 2,
+  "totalElementos": 4,
+  "tamanioPagina": 2,
+  "ultima": false
+}</code></pre>
+
+<h2>El problema N+1 — el más silencioso de los bugs</h2>
+
+<div class="peligro">
+  <strong>Escenario:</strong> Repuesto tiene una relación <code>@OneToMany List&lt;Imagen&gt;</code> con fetch LAZY.<br><br>
+  <code>repositorio.findAll()</code> ejecuta <strong>1 SELECT</strong> para traer 100 repuestos.<br>
+  Luego, cuando el Service accede a <code>repuesto.getImagenes()</code> para cada uno,
+  Hibernate ejecuta <strong>100 SELECTs más</strong> → 101 queries totales.<br><br>
+  <strong>Solución:</strong> <code>@Query("SELECT r FROM Repuesto r JOIN FETCH r.imagenes")</code>
+  o <code>@EntityGraph(attributePaths = "imagenes")</code> → 1 sola query con JOIN.<br><br>
+  Siempre revisar el log de SQL (<code>show-sql: true</code>) al agregar relaciones.
+</div>
+
+<h2>Nuevos endpoints</h2>
+
+<pre><code># Repuestos con stock crítico
+curl "http://localhost:8080/api/v1/repuestos/stock-bajo?umbral=5"
+
+# Búsqueda por descripción
+curl "http://localhost:8080/api/v1/repuestos/buscar?q=toyota"
+
+# Paginado y ordenado por precio
+curl "http://localhost:8080/api/v1/repuestos/paginado?pagina=0&tamano=5&ordenarPor=precio"</code></pre>
+
+<h2>Tests de esta sesión</h2>
+
+<table class="tabla">
+  <thead><tr><th>Clase de test</th><th>Anotación</th><th>Qué prueba</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>RepuestoRepositoryTest</td>
+      <td><code>@DataJpaTest</code></td>
+      <td>Que las queries JPQL y derivadas son correctas contra H2</td>
+    </tr>
+    <tr>
+      <td>RepuestoServiceTest</td>
+      <td><code>@ExtendWith(MockitoExtension)</code></td>
+      <td>Lógica de negocio con repositorio mockeado</td>
+    </tr>
+    <tr>
+      <td>RepuestoControllerTest</td>
+      <td><code>@WebMvcTest</code></td>
+      <td>Endpoints nuevos: paginado, stock-bajo, buscar</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="aviso">
+  <strong>¿Por qué H2 en tests y no Postgres real?</strong><br>
+  H2 en modo <code>MODE=PostgreSQL</code> cubre el 95% de los casos sin requerir Docker en cada máquina.
+  El 5% restante (full-text, JSONB, arrays nativos) lo cubriremos en SB-11 con <strong>Testcontainers</strong>,
+  que levanta un Postgres real en un contenedor Docker durante el test.
+</div>
+
+<h2>Qué viene en SB-03</h2>
+
+<div class="caja">
+  <strong>Spring JDBC + múltiples datasources:</strong>
+  PEVISA tiene un sistema legado en Oracle con historial de pedidos que no se va a migrar.
+  Aprenderemos a conectar la misma app a dos bases de datos simultáneamente
+  y cuándo usar <code>JdbcClient</code> (Spring 6) en vez de JPA.
+</div>
+
+<h2>Ejercicio</h2>
+
+<div class="caja">
+  <ol>
+    <li>Completar los TODOs 3 al 16 en el <code>start/</code>.</li>
+    <li>Levantar Postgres: <code>docker compose up -d</code></li>
+    <li>Correr la app: <code>mvn spring-boot:run</code></li>
+    <li>Verificar que Hibernate creó la tabla: <code>docker exec -it pevisa-postgres psql -U pevisa -d pevisa_db -c "\d repuestos"</code></li>
+    <li>Crear 3 repuestos con POST y listarlos paginados.</li>
+    <li>Buscar repuestos con stock bajo: <code>GET /stock-bajo?umbral=20</code></li>
+    <li>Correr tests: <code>mvn test</code> (deben pasar los 16 sin Postgres levantado)</li>
+  </ol>
+</div>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,11 @@
+/Users/josediaz/Projects/joedayz/pevisa-spring-angular/springboot/sb-02-jpa-spring-data/solution/src/main/java/pe/com/pevisa/repuesto/PevisaApplication.java
+/Users/josediaz/Projects/joedayz/pevisa-spring-angular/springboot/sb-02-jpa-spring-data/solution/src/main/java/pe/com/pevisa/repuesto/controller/RepuestoController.java
+/Users/josediaz/Projects/joedayz/pevisa-spring-angular/springboot/sb-02-jpa-spring-data/solution/src/main/java/pe/com/pevisa/repuesto/dto/PageResponse.java
+/Users/josediaz/Projects/joedayz/pevisa-spring-angular/springboot/sb-02-jpa-spring-data/solution/src/main/java/pe/com/pevisa/repuesto/dto/RepuestoRequest.java
+/Users/josediaz/Projects/joedayz/pevisa-spring-angular/springboot/sb-02-jpa-spring-data/solution/src/main/java/pe/com/pevisa/repuesto/dto/RepuestoResponse.java
+/Users/josediaz/Projects/joedayz/pevisa-spring-angular/springboot/sb-02-jpa-spring-data/solution/src/main/java/pe/com/pevisa/repuesto/exception/GlobalExceptionHandler.java
+/Users/josediaz/Projects/joedayz/pevisa-spring-angular/springboot/sb-02-jpa-spring-data/solution/src/main/java/pe/com/pevisa/repuesto/exception/RepuestoNotFoundException.java
+/Users/josediaz/Projects/joedayz/pevisa-spring-angular/springboot/sb-02-jpa-spring-data/solution/src/main/java/pe/com/pevisa/repuesto/model/Repuesto.java
+/Users/josediaz/Projects/joedayz/pevisa-spring-angular/springboot/sb-02-jpa-spring-data/solution/src/main/java/pe/com/pevisa/repuesto/repository/RepuestoRepository.java
+/Users/josediaz/Projects/joedayz/pevisa-spring-angular/springboot/sb-02-jpa-spring-data/solution/src/main/java/pe/com/pevisa/repuesto/repository/RepuestoResumen.java
+/Users/josediaz/Projects/joedayz/pevisa-spring-angular/springboot/sb-02-jpa-spring-data/solution/src/main/java/pe/com/pevisa/repuesto/service/RepuestoService.java

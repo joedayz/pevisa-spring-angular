@@ -1,0 +1,32 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: pevisa-repuestos
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/pevisa_db
+    username: pevisa
+    password: pevisa123
+    hikari:
+      # TODO 1: Configurar maximum-pool-size, connection-timeout
+      # Fórmula: (núcleos_cpu * 2) + 1
+      maximum-pool-size: 10
+
+  jpa:
+    hibernate:
+      # TODO 2: ¿Qué valor usar aquí? create-drop está bien para desarrollo.
+      #         ¿Por qué en producción usaríamos validate? ¿Qué hace Flyway por nosotros?
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

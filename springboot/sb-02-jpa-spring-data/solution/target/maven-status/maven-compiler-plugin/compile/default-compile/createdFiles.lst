@@ -1,0 +1,14 @@
+pe/com/pevisa/repuesto/repository/RepuestoRepository.class
+pe/com/pevisa/repuesto/exception/RepuestoNotFoundException.class
+pe/com/pevisa/repuesto/dto/PageResponse$PageResponseBuilder.class
+pe/com/pevisa/repuesto/dto/RepuestoRequest.class
+pe/com/pevisa/repuesto/controller/RepuestoController.class
+pe/com/pevisa/repuesto/exception/GlobalExceptionHandler.class
+pe/com/pevisa/repuesto/model/Repuesto.class
+pe/com/pevisa/repuesto/PevisaApplication.class
+pe/com/pevisa/repuesto/model/Repuesto$RepuestoBuilder.class
+pe/com/pevisa/repuesto/repository/RepuestoResumen.class
+pe/com/pevisa/repuesto/dto/RepuestoResponse$RepuestoResponseBuilder.class
+pe/com/pevisa/repuesto/dto/PageResponse.class
+pe/com/pevisa/repuesto/dto/RepuestoResponse.class
+pe/com/pevisa/repuesto/service/RepuestoService.class
