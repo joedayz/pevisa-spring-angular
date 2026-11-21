@@ -8,6 +8,8 @@ import pe.com.pevisa.repuesto.dto.RepuestoResponse;
 import pe.com.pevisa.repuesto.model.Repuesto;
 import pe.com.pevisa.repuesto.repository.RepuestoRepository;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class RepuestoService {
@@ -50,5 +52,20 @@ public class RepuestoService {
                 .precio(request.precio())
                 .stock(request.stock())
                 .build();
+    }
+
+    public List<RepuestoResponse> buscarPorDivision(String division) {
+
+        return repositorio.findByDivision(division)
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    public List<RepuestoResponse> listar() {
+        return repositorio.findAll()
+                .stream()
+                .map(this::toResponse)
+                .toList();
     }
 }

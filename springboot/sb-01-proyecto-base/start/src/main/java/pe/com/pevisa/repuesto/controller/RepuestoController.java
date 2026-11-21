@@ -1,9 +1,15 @@
 package pe.com.pevisa.repuesto.controller;
 
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import pe.com.pevisa.repuesto.dto.RepuestoResponse;
+import pe.com.pevisa.repuesto.service.RepuestoService;
+
+import java.util.List;
 
 
 /**
@@ -23,11 +29,20 @@ import org.springframework.web.bind.annotation.RestController;
  */
 
 @RestController
-@RequestMapping("/api/v1/repuestos") // http://localhost:8080/api/v1/repuestos
+@RequestMapping("/api/v1/repuestos")
+@RequiredArgsConstructor// http://localhost:8080/api/v1/repuestos
 public class RepuestoController {
 
-    @GetMapping // http://localhost:8080/api/v1/repuestos
-    public String hello() {
-        return "Hello Pevisa!";
+    private final RepuestoService servicio;
+
+
+    @GetMapping // http://localhost:8080/api/v1/repuestos o /api/v1/repuestos?division=BOSCH
+    public List<RepuestoResponse> listar( @RequestParam(required = false) String division) {
+        if(division != null && !division.isBlank()){
+            return servicio.buscarPorDivision(division);
+        }
+        return servicio.listar();
     }
+
+
 }

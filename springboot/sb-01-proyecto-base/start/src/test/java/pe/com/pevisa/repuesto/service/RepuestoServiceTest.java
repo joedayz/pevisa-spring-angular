@@ -1,4 +1,4 @@
-package pe.com.pevisa.repuesto;
+package pe.com.pevisa.repuesto.service;
 
 
 import org.junit.jupiter.api.BeforeEach;
@@ -12,7 +12,6 @@ import pe.com.pevisa.repuesto.dto.RepuestoRequest;
 import pe.com.pevisa.repuesto.dto.RepuestoResponse;
 import pe.com.pevisa.repuesto.model.Repuesto;
 import pe.com.pevisa.repuesto.repository.RepuestoRepository;
-import pe.com.pevisa.repuesto.service.RepuestoService;
 
 import java.math.BigDecimal;
 import java.util.Optional;
