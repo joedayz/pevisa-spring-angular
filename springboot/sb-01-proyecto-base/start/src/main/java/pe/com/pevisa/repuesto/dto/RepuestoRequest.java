@@ -1,4 +1,10 @@
 package pe.com.pevisa.repuesto.dto;
 
-public record RepuestoRequest() {
+import java.math.BigDecimal;
+
+public record RepuestoRequest(String codigo,
+                              String descripcion,
+                              String division,
+                              BigDecimal precio,
+                              Integer stock) {
 }

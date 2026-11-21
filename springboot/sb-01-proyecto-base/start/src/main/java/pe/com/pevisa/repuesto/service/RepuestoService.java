@@ -3,6 +3,7 @@ package pe.com.pevisa.repuesto.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import pe.com.pevisa.repuesto.dto.RepuestoRequest;
 import pe.com.pevisa.repuesto.dto.RepuestoResponse;
 import pe.com.pevisa.repuesto.model.Repuesto;
 import pe.com.pevisa.repuesto.repository.RepuestoRepository;
@@ -28,5 +29,26 @@ public class RepuestoService {
                 r.getPrecio(),
                 r.getStock()
         );
+    }
+
+    public RepuestoResponse crear(RepuestoRequest request) {
+
+        repositorio.findByCodigo(request.codigo())
+                .ifPresent(r -> {
+                    throw new RuntimeException("Repuesto ya existe con codigo: " + request.codigo());
+                });
+        Repuesto nuevo = toModel(request);
+        Repuesto guardado = repositorio.save(nuevo);
+        return toResponse(guardado);
+    }
+
+    private Repuesto toModel(RepuestoRequest request) {
+        return Repuesto.builder()
+                .codigo(request.codigo())
+                .descripcion(request.descripcion())
+                .division(request.division())
+                .precio(request.precio())
+                .stock(request.stock())
+                .build();
     }
 }

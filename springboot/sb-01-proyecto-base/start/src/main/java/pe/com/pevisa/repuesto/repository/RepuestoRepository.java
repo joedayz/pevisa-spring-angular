@@ -6,4 +6,8 @@ import java.util.Optional;
 
 public interface RepuestoRepository {
     Optional<Repuesto> findById(Long id );
+
+    Optional<Repuesto> findByCodigo(String codigo);
+
+    Repuesto save(Repuesto repuesto);
 }
