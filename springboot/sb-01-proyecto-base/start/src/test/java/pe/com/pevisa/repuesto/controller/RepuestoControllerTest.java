@@ -5,17 +5,22 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import pe.com.pevisa.repuesto.dto.RepuestoRequest;
 import pe.com.pevisa.repuesto.dto.RepuestoResponse;
-import pe.com.pevisa.repuesto.model.Repuesto;
+import pe.com.pevisa.repuesto.exception.RepuestoNotFoundException;
 import pe.com.pevisa.repuesto.service.RepuestoService;
+import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -27,6 +32,9 @@ public class RepuestoControllerTest {
 
     @MockitoBean
     private RepuestoService servicio;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
     @DisplayName("GET /api/v1/repuestos devuelve lista con 200")
@@ -81,11 +89,64 @@ public class RepuestoControllerTest {
     @Test
     @DisplayName("GET /api/v1/repuestos/{id} devuelve 404 cuando no existe")
     void buscarPorId_noExiste_devuelve404() throws Exception {
-        when(servicio.buscarPorId(99L)).thenThrow(new RuntimeException("Repuesto no encontrado con id: 99"));
+        when(servicio.buscarPorId(99L)).thenThrow(new RepuestoNotFoundException(99L));
 
         mockMvc.perform(get("/api/v1/repuestos/99"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.title").value("Repuesto no encontrado"));
-        //TODO no existe title en el response, se debe agregar un @ControllerAdvice para manejar las excepciones y devolver un JSON con title y message
+
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/repuestos con body inválido devuelve 400")
+    void crear_bodyInvalido_devuelve400() throws Exception {
+        RepuestoRequest request = new RepuestoRequest(
+                "",
+                "",
+                "",
+                new BigDecimal("0"),
+                0
+        );
+
+
+        mockMvc.perform(post("/api/v1/repuestos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Error de validación"));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/repuestos crea y devuelve 201")
+    void crear_valido_devuelve201() throws Exception {
+
+        RepuestoRequest request = new RepuestoRequest(
+                "BAT-VOLTA-010",
+                "Batería Volta 70Ah",
+                "BATERIAS",
+                new BigDecimal("380.00"),
+                15
+        );
+
+        RepuestoResponse response = new RepuestoResponse(
+                10L,
+                "BAT-VOLTA-010",
+                "Batería Volta 70Ah",
+                "BATERIAS",
+                new BigDecimal("380.00"),
+                15
+        );
+
+
+        when(servicio.crear(any())).thenReturn(response);
+
+        mockMvc.perform(post("/api/v1/repuestos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(10))
+                .andExpect(jsonPath("$.estadoStock").value("DISPONIBLE"));
+
+
     }
 }

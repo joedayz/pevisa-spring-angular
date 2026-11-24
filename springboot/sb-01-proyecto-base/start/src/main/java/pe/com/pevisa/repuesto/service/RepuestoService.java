@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pe.com.pevisa.repuesto.dto.RepuestoRequest;
 import pe.com.pevisa.repuesto.dto.RepuestoResponse;
+import pe.com.pevisa.repuesto.exception.RepuestoNotFoundException;
 import pe.com.pevisa.repuesto.model.Repuesto;
 import pe.com.pevisa.repuesto.repository.RepuestoRepository;
 
@@ -19,7 +20,7 @@ public class RepuestoService {
     public RepuestoResponse buscarPorId(Long id){
         return repositorio.findById(id)
                 .map(r -> toResponse(r))
-                .orElseThrow(() -> new RuntimeException("Repuesto no encontrado con id: " + id));
+                .orElseThrow(() -> new RepuestoNotFoundException(id));
     }
 
     private RepuestoResponse toResponse(Repuesto r) {
@@ -37,7 +38,7 @@ public class RepuestoService {
 
         repositorio.findByCodigo(request.codigo())
                 .ifPresent(r -> {
-                    throw new RuntimeException("Repuesto ya existe con codigo: " + request.codigo());
+                    throw new IllegalArgumentException("Repuesto ya existe con codigo: " + request.codigo());
                 });
         Repuesto nuevo = toModel(request);
         Repuesto guardado = repositorio.save(nuevo);

@@ -1,11 +1,11 @@
 package pe.com.pevisa.repuesto.controller;
 
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+import pe.com.pevisa.repuesto.dto.RepuestoRequest;
 import pe.com.pevisa.repuesto.dto.RepuestoResponse;
 import pe.com.pevisa.repuesto.service.RepuestoService;
 
@@ -44,5 +44,15 @@ public class RepuestoController {
         return servicio.listar();
     }
 
+    @GetMapping("/{id}") // http://localhost:8080/api/v1/repuestos/1
+    public RepuestoResponse buscarPorId(@PathVariable Long id) {
+        return servicio.buscarPorId(id);
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public RepuestoResponse crear(@Valid @RequestBody RepuestoRequest request) {
+        return servicio.crear(request);
+    }
 
 }
