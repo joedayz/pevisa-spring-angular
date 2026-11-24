@@ -3,6 +3,7 @@ package pe.com.pevisa.repuesto.service;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import pe.com.pevisa.repuesto.dto.RepuestoRequest;
 import pe.com.pevisa.repuesto.dto.RepuestoResponse;
@@ -12,6 +13,7 @@ import pe.com.pevisa.repuesto.repository.RepuestoRepository;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RepuestoService {
@@ -19,6 +21,7 @@ public class RepuestoService {
     private final RepuestoRepository repositorio;
 
     public RepuestoResponse buscarPorId(Long id){
+        log.info("Buscando repuesto con id: {}", id);
         return repositorio.findById(id)
                 .map(r -> toResponse(r))
                 .orElseThrow(() -> new RepuestoNotFoundException(id));
@@ -37,6 +40,7 @@ public class RepuestoService {
 
     public RepuestoResponse crear(RepuestoRequest request) {
 
+        log.info("Creando repuesto con codigo: {}", request.codigo());
         repositorio.findByCodigo(request.codigo())
                 .ifPresent(r -> {
                     throw new IllegalArgumentException("Repuesto ya existe con codigo: " + request.codigo());
@@ -57,7 +61,7 @@ public class RepuestoService {
     }
 
     public List<RepuestoResponse> buscarPorDivision(String division) {
-
+        log.info("Buscando repuestos por division: {}", division);
         return repositorio.findByDivision(division)
                 .stream()
                 .map(this::toResponse)
@@ -65,6 +69,7 @@ public class RepuestoService {
     }
 
     public List<RepuestoResponse> listar() {
+        log.info("Listando todos los repuestos");
         return repositorio.findAll()
                 .stream()
                 .map(this::toResponse)
@@ -72,7 +77,7 @@ public class RepuestoService {
     }
 
     public RepuestoResponse actualizar(Long id, @Valid RepuestoRequest request) {
-
+        log.info("Actualizando repuesto con id: {}", id);
         Repuesto existente = repositorio.findById(id)
                 .orElseThrow(() -> new RepuestoNotFoundException(id));
 
@@ -86,6 +91,7 @@ public class RepuestoService {
     }
 
     public void eliminar(Long id) {
+        log.info("Eliminando repuesto con id: {}", id);
         if(!repositorio.existsById(id)){
             throw new RepuestoNotFoundException(id);
         }
