@@ -4,6 +4,7 @@ package pe.com.pevisa.repuesto.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pe.com.pevisa.repuesto.dto.RepuestoRequest;
 import pe.com.pevisa.repuesto.dto.RepuestoResponse;
@@ -53,6 +54,19 @@ public class RepuestoController {
     @ResponseStatus(HttpStatus.CREATED)
     public RepuestoResponse crear(@Valid @RequestBody RepuestoRequest request) {
         return servicio.crear(request);
+    }
+
+    @PutMapping("/{id}")
+    public RepuestoResponse actualizar(
+            @PathVariable Long id,
+            @Valid @RequestBody RepuestoRequest request) {
+        return servicio.actualizar(id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+        servicio.eliminar(id);
+        return ResponseEntity.noContent().build();
     }
 
 }

@@ -15,4 +15,8 @@ public interface RepuestoRepository {
     List<Repuesto> findByDivision(String division);
 
     List<Repuesto>  findAll();
+
+    boolean existsById(Long id);
+
+    void deleteById(Long id);
 }

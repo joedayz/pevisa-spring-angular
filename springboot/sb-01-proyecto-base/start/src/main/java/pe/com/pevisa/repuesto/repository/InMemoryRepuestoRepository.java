@@ -82,4 +82,14 @@ public class InMemoryRepuestoRepository implements RepuestoRepository {
     public List<Repuesto> findAll() {
         return List.copyOf(almacen.values());
     }
+
+    @Override
+    public boolean existsById(Long id) {
+        return almacen.containsKey(id);
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        almacen.remove(id);
+    }
 }

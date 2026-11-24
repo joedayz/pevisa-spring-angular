@@ -1,6 +1,7 @@
 package pe.com.pevisa.repuesto.service;
 
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pe.com.pevisa.repuesto.dto.RepuestoRequest;
@@ -68,5 +69,26 @@ public class RepuestoService {
                 .stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    public RepuestoResponse actualizar(Long id, @Valid RepuestoRequest request) {
+
+        Repuesto existente = repositorio.findById(id)
+                .orElseThrow(() -> new RepuestoNotFoundException(id));
+
+        existente.setCodigo(request.codigo());
+        existente.setDescripcion(request.descripcion());
+        existente.setDivision(request.division());
+        existente.setPrecio(request.precio());
+        existente.setStock(request.stock());
+
+        return toResponse(repositorio.save(existente));
+    }
+
+    public void eliminar(Long id) {
+        if(!repositorio.existsById(id)){
+            throw new RepuestoNotFoundException(id);
+        }
+        repositorio.deleteById(id);
     }
 }
