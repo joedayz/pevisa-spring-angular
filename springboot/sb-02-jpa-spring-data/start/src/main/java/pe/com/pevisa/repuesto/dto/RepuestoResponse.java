@@ -1,28 +1,30 @@
 package pe.com.pevisa.repuesto.dto;
 
-import lombok.Builder;
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/**
- * DTO de salida — ahora incluye los campos de auditoría.
- * El cliente puede ver cuándo se creó y actualizó el repuesto.
- */
-@Data
-@Builder
-public class RepuestoResponse {
 
-    private Long id;
-    private String codigo;
-    private String descripcion;
-    private String division;
-    private BigDecimal precio;
-    private Integer stock;
-    private String estadoStock;
+public record RepuestoResponse(
+    Long id,
+    String codigo,
+    String descripcion,
+    String division,
+    BigDecimal precio,
+    Integer stock,
+    LocalDateTime createdAt,
+    LocalDateTime updatedAt
+) {
 
-    // Nuevos en SB-02 — vienen de los campos de auditoría de la entidad
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    @JsonProperty("estadoStock")
+    public String estadoStock() {
+        if (stock == null || stock <= 0) {
+            return "AGOTADO";
+        } else if (stock < 5) {
+            return "POCO STOCK";
+        } else {
+            return "DISPONIBLE";
+        }
+    }
 }

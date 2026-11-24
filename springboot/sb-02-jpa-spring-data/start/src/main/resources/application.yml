@@ -10,20 +10,28 @@ spring:
     username: pevisa
     password: pevisa123
     hikari:
-      # TODO 1: Configurar maximum-pool-size, connection-timeout
-      # Fórmula: (núcleos_cpu * 2) + 1
+      # Tamaño del pool de conexiones.
+      # Regla: (núcleos_cpu * 2) + spindle_disks
+      # Para desarrollo con 4 núcleos: (4*2)+1 = 9. Ponemos 10.
       maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: PevisaHikariPool
 
   jpa:
     hibernate:
-      # TODO 2: ¿Qué valor usar aquí? create-drop está bien para desarrollo.
-      #         ¿Por qué en producción usaríamos validate? ¿Qué hace Flyway por nosotros?
       ddl-auto: create-drop
     show-sql: true
     properties:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
 
 management:
   endpoints:

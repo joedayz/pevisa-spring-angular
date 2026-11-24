@@ -1,55 +1,48 @@
 package pe.com.pevisa.repuesto.model;
 
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/**
- * TODO 3: Convertir esta clase en entidad JPA.
- *   - Agregar @Entity y @Table(name = "repuestos")
- *   - Marcar el campo id con @Id y @GeneratedValue(strategy = GenerationType.IDENTITY)
- *
- * TODO 4: Anotar cada campo con @Column:
- *   - codigo:      nullable=false, unique=true, length=50
- *   - descripcion: nullable=false, length=200
- *   - division:    nullable=false, length=50
- *   - precio:      nullable=false, precision=12, scale=2
- *   - stock:       nullable=false
- *   - createdAt:   nullable=false, updatable=false
- *   - updatedAt:   sin restricciones extra
- *
- * TODO 5: Implementar los callbacks del ciclo de vida JPA:
- *   - @PrePersist  → establecer createdAt y updatedAt con LocalDateTime.now()
- *   - @PreUpdate   → actualizar solo updatedAt
- *
- * Pregunta: ¿qué diferencia hay entre @PrePersist y @PreUpdate?
- *           ¿En qué momento exacto los llama Hibernate?
- */
+
+@Entity
+@Table(name = "repuestos")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-// TODO 3: agregar @Entity y @Table
 public class Repuesto {
 
-    // TODO 3: agregar @Id y @GeneratedValue
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // TODO 4: agregar @Column con sus restricciones
+    @Column(name = "codigo", nullable = false, unique = true, length = 50)
     private String codigo;
+
+    @Column(name = "descripcion", nullable = false, length = 200)
     private String descripcion;
+    @Column(name = "division", nullable = false, length = 50)
     private String division;
+    @Column(name = "precio", nullable = false, precision = 12, scale = 2)
     private BigDecimal precio;
+    @Column(name = "stock", nullable = false)
     private Integer stock;
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // TODO 5: agregar @PrePersist
+    @PrePersist
     void antesDeInsertar() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
-    // TODO 5: agregar @PreUpdate
+    @PreUpdate
     void antesDeActualizar() {
+        updatedAt = LocalDateTime.now();
     }
 }
