@@ -24,7 +24,7 @@ spring:
 
   flyway:
     enabled: true
-    locations: classpath:db/migration/test
+    locations: classpath:db/migration-test
     # En tests usamos una carpeta separada que solo tiene las migraciones
     # compatibles con H2 (sin PL/pgSQL, sin full-text Postgres)
 

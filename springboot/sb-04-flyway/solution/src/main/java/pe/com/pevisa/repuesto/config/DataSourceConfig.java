@@ -4,10 +4,12 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import jakarta.persistence.EntityManagerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.flyway.autoconfigure.FlywayDataSource;
+import org.springframework.boot.jdbc.autoconfigure.DataSourceProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -62,6 +64,7 @@ public class DataSourceConfig {
      */
     @Bean
     @Primary
+    @FlywayDataSource
     @ConfigurationProperties("spring.datasource.hikari")
     public DataSource principalDataSource(
             @Qualifier("principalDataSourceProperties") DataSourceProperties props) {
@@ -80,14 +83,16 @@ public class DataSourceConfig {
      */
     @Bean("principalEntityManagerFactory")
     @Primary
+    @DependsOn("flywayInitializer")
     public LocalContainerEntityManagerFactoryBean principalEntityManagerFactory(
             @Qualifier("principalDataSource") DataSource dataSource) {
 
         HibernateJpaVendorAdapter adapter = new HibernateJpaVendorAdapter();
-        adapter.setGenerateDdl(true);
+        adapter.setGenerateDdl(false);
 
         Map<String, Object> props = new HashMap<>();
-        props.put("hibernate.hbm2ddl.auto", "create-drop");
+        props.put("hibernate.hbm2ddl.auto", "validate");
+        props.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
         props.put("hibernate.show_sql", true);
         props.put("hibernate.format_sql", true);
         props.put("hibernate.jdbc.batch_size", 50);

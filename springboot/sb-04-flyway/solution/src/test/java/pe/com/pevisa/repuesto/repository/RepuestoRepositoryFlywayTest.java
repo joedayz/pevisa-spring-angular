@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Test de integración JPA + Flyway.
  *
  * @DataJpaTest con @ActiveProfiles("test") activa application-test.yml
- * que configura Flyway con las migraciones de db/migration/test/.
+ * que configura Flyway con las migraciones de db/migration-test/.
  *
  * Lo que prueba este test:
  *   1. Que las migraciones V1, V2, V3 corren sin errores en H2
